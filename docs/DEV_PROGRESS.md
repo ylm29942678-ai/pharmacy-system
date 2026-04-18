@@ -207,3 +207,296 @@ pharmacy-system/
 - **新增顾客**：POST http://localhost:8080/api/customer
 - **查询药品列表**：GET http://localhost:8080/api/medicine/list
 - **删除用户（逻辑删除）**：DELETE http://localhost:8080/api/user/1
+
+---
+
+## Session 3：采购与销售双表联动业务 ✅ 已完成
+
+### 一、新增目录结构
+
+```
+pharmacy-system/
+└── pharmacy-admin/
+    └── src/
+        └── main/
+            └── java/com/pharmacy/
+                ├── dto/
+                │   ├── PurchaseItemDTO.java
+                │   ├── PurchaseOrderCreateDTO.java
+                │   ├── SaleItemDTO.java
+                │   └── SaleOrderCreateDTO.java
+                ├── entity/
+                │   ├── PurchaseOrder.java
+                │   ├── PurchaseItem.java
+                │   ├── SaleOrder.java
+                │   └── SaleItem.java
+                ├── mapper/
+                │   ├── PurchaseOrderMapper.java
+                │   ├── PurchaseItemMapper.java
+                │   ├── SaleOrderMapper.java
+                │   └── SaleItemMapper.java
+                ├── service/
+                │   ├── PurchaseOrderService.java
+                │   ├── PurchaseItemService.java
+                │   ├── SaleOrderService.java
+                │   ├── SaleItemService.java
+                │   └── impl/
+                │       ├── PurchaseOrderServiceImpl.java
+                │       ├── PurchaseItemServiceImpl.java
+                │       ├── SaleOrderServiceImpl.java
+                │       └── SaleItemServiceImpl.java
+                └── controller/
+                    ├── PurchaseOrderController.java
+                    ├── PurchaseItemController.java
+                    ├── SaleOrderController.java
+                    └── SaleItemController.java
+```
+
+### 二、核心事务接口说明
+
+#### 1. 创建采购单接口（主从表同时插入）
+
+**接口路径**：`POST /api/purchase-order/create`
+
+**方法签名**：
+```java
+@Transactional(rollbackFor = Exception.class)
+public PurchaseOrder createPurchaseOrder(PurchaseOrderCreateDTO dto)
+```
+
+**入参 DTO 结构**：
+```java
+public class PurchaseOrderCreateDTO {
+    private Integer supplierId;        // 供应商ID
+    private Integer userId;            // 操作员ID
+    private LocalDateTime purchaseTime;// 采购时间
+    private BigDecimal totalAmount;    // 总金额
+    private String payType;            // 支付方式
+    private String remark;             // 备注
+    private List<PurchaseItemDTO> items; // 采购明细列表
+}
+
+public class PurchaseItemDTO {
+    private Integer medId;            // 药品ID
+    private String batchNo;           // 批号
+    private LocalDate productionDate; // 生产日期
+    private LocalDate expireDate;     // 有效期
+    private Integer purchaseNum;      // 采购数量
+    private BigDecimal purchasePrice; // 采购单价
+    private BigDecimal totalPrice;    // 小计
+    private String cabinet;           // 药柜位置
+    private String remark;            // 备注
+}
+```
+
+**事务处理逻辑**：
+- 插入 `purchase_order` 主表记录
+- 获取生成的 `purchase_id`
+- 批量插入 `purchase_item` 明细表记录（设置 purchase_id）
+- 使用 `@Transactional` 保证主从表原子性
+
+---
+
+#### 2. 创建销售单接口（主从表插入 + 更新顾客累计消费）
+
+**接口路径**：`POST /api/sale-order/create`
+
+**方法签名**：
+```java
+@Transactional(rollbackFor = Exception.class)
+public SaleOrder createSaleOrder(SaleOrderCreateDTO dto)
+```
+
+**入参 DTO 结构**：
+```java
+public class SaleOrderCreateDTO {
+    private Long orderId;             // 订单号（手动输入）
+    private Integer custId;           // 顾客ID（可选）
+    private Integer userId;           // 操作员ID
+    private BigDecimal totalPrice;    // 订单总价
+    private String payType;           // 支付方式
+    private Integer orderType;        // 订单类型
+    private Integer payStatus;        // 支付状态
+    private String remark;            // 备注
+    private List<SaleItemDTO> items;  // 销售明细列表
+}
+
+public class SaleItemDTO {
+    private Integer medId;            // 药品ID
+    private String batchNo;           // 批号
+    private Integer quantity;         // 销售数量
+    private BigDecimal unitPrice;     // 销售单价
+    private BigDecimal totalPrice;    // 小计
+}
+```
+
+**事务处理逻辑**：
+- 插入 `sale_order` 主表记录
+- 获取 `order_id`
+- 批量插入 `sale_item` 明细表记录（设置 order_id）
+- 如果传入了 `cust_id`，更新 `customer.total_consume` 累加订单总价
+- 使用 `@Transactional` 保证所有操作原子性
+
+### 三、核心 API 路径列表
+
+| 模块      | 基础路径               | 说明                   |
+| ------- | ------------------ | -------------------- |
+| 采购订单    | /api/purchase-order | 采购订单 CRUD + 事务创建  |
+| 采购明细    | /api/purchase-item  | 采购明细 CRUD           |
+| 销售订单    | /api/sale-order     | 销售订单 CRUD + 事务创建  |
+| 销售明细    | /api/sale-item      | 销售明细 CRUD           |
+
+### 四、Session 3 测试方法
+
+#### 前置条件
+同 Session 1，确保：
+1. MySQL 已启动，数据库 `pms_db` 已创建
+2. 数据库中已有基础数据（supplier、user、medicine、customer）
+3. 项目已编译通过
+
+#### 测试步骤
+
+##### 步骤 1：编译并启动后端服务
+```bash
+cd pharmacy-admin
+mvn clean compile
+mvn spring-boot:run
+```
+
+##### 步骤 2：验证基础数据
+首先确保以下基础数据存在（可通过对应 CRUD 接口查询）：
+- **供应商**：至少有一个 supplier（supplier_id=1）
+- **用户**：至少有两个 user（user_id=1, user_id=2）
+- **药品**：至少有一个 medicine（med_id=1）
+- **顾客**：至少有一个 customer（cust_id=1）
+
+##### 步骤 3：创建采购单测试
+
+**接口**：POST http://localhost:8080/api/purchase-order/create
+
+**请求头**：Content-Type: application/json
+
+**请求体**：
+```json
+{
+  "supplierId": 1,
+  "userId": 1,
+  "purchaseTime": "2026-04-18T10:00:00",
+  "totalAmount": 164.00,
+  "payType": "转账",
+  "remark": "月度采购",
+  "items": [
+    {
+      "medId": 1,
+      "batchNo": "20260418A",
+      "productionDate": "2026-01-01",
+      "expireDate": "2028-01-01",
+      "purchaseNum": 20,
+      "purchasePrice": 8.20,
+      "totalPrice": 164.00,
+      "cabinet": "西药柜",
+      "remark": ""
+    }
+  ]
+}
+```
+
+**预期结果**：
+- 返回 code=200 的成功响应
+- data 中包含创建的采购单信息，purchase_id 已自动生成
+- 查询 purchase_order 表，新增一条记录
+- 查询 purchase_item 表，新增对应的明细记录
+
+**验证查询接口**：
+- GET http://localhost:8080/api/purchase-order/list
+- GET http://localhost:8080/api/purchase-order/{purchase_id}
+
+---
+
+##### 步骤 4：创建销售单测试（关联顾客）
+
+**接口**：POST http://localhost:8080/api/sale-order/create
+
+**请求头**：Content-Type: application/json
+
+**请求体**：
+```json
+{
+  "orderId": 202604180001,
+  "custId": 1,
+  "userId": 2,
+  "totalPrice": 31.00,
+  "payType": "微信",
+  "orderType": 1,
+  "payStatus": 1,
+  "remark": "会员折扣",
+  "items": [
+    {
+      "medId": 1,
+      "batchNo": "20250101A",
+      "quantity": 2,
+      "unitPrice": 15.50,
+      "totalPrice": 31.00
+    }
+  ]
+}
+```
+
+**预期结果**：
+- 返回 code=200 的成功响应
+- data 中包含创建的销售单信息
+- 查询 sale_order 表，新增一条记录
+- 查询 sale_item 表，新增对应的明细记录
+- **重要**：查询 customer 表，cust_id=1 的 total_consume 字段增加了 31.00
+
+**验证查询接口**：
+- GET http://localhost:8080/api/sale-order/list
+- GET http://localhost:8080/api/sale-order/202604180001
+- GET http://localhost:8080/api/customer/1 （验证 total_consume 更新）
+
+---
+
+##### 步骤 5：创建销售单测试（不关联顾客）
+
+**请求体**：
+```json
+{
+  "orderId": 202604180002,
+  "userId": 1,
+  "totalPrice": 12.00,
+  "payType": "现金",
+  "orderType": 1,
+  "payStatus": 1,
+  "remark": "散客",
+  "items": [
+    {
+      "medId": 3,
+      "batchNo": "20240815C",
+      "quantity": 1,
+      "unitPrice": 12.00,
+      "totalPrice": 12.00
+    }
+  ]
+}
+```
+
+**预期结果**：
+- 销售单和明细正常创建
+- customer 表无更新（因为没有传入 custId）
+
+---
+
+#### 事务回滚测试（可选）
+
+为了验证事务的正确性，可以模拟错误场景：
+
+1. **修改代码测试**：在 PurchaseOrderServiceImpl 的 saveBatch 之前手动抛出异常
+2. **验证结果**：purchase_order 和 purchase_item 都不应该有新增记录
+
+#### 测试数据清理
+
+测试完成后，可以通过以下接口清理测试数据：
+- DELETE http://localhost:8080/api/purchase-order/{purchase_id}
+- DELETE http://localhost:8080/api/sale-order/{order_id}
+
+注意：由于 purchase_item 和 sale_item 有外键约束，删除主表前需要先删除明细表，或者直接在数据库中清理。
