@@ -1,0 +1,91 @@
+import { createRouter, createWebHistory } from 'vue-router'
+import Layout from '@/layout/index.vue'
+
+const routes = [
+  {
+    path: '/',
+    component: Layout,
+    redirect: '/dashboard',
+    children: [
+      {
+        path: 'dashboard',
+        name: 'Dashboard',
+        component: () => import('@/views/dashboard/index.vue'),
+        meta: { title: '控制台', icon: 'Monitor' }
+      },
+      {
+        path: 'customer',
+        name: 'Customer',
+        component: () => import('@/views/customer/index.vue'),
+        meta: { title: '顾客管理', icon: 'User' }
+      },
+      {
+        path: 'medicine',
+        name: 'Medicine',
+        component: () => import('@/views/medicine/index.vue'),
+        meta: { title: '药品管理', icon: 'Box' }
+      },
+      {
+        path: 'supplier',
+        name: 'Supplier',
+        component: () => import('@/views/supplier/index.vue'),
+        meta: { title: '供应商管理', icon: 'OfficeBuilding' }
+      },
+      {
+        path: 'user',
+        name: 'User',
+        component: () => import('@/views/user/index.vue'),
+        meta: { title: '用户管理', icon: 'Avatar' }
+      },
+      {
+        path: 'purchase-order',
+        name: 'PurchaseOrder',
+        component: () => import('@/views/purchase-order/index.vue'),
+        meta: { title: '采购订单', icon: 'Document' }
+      },
+      {
+        path: 'purchase-item',
+        name: 'PurchaseItem',
+        component: () => import('@/views/purchase-item/index.vue'),
+        meta: { title: '采购明细', icon: 'Tickets' }
+      },
+      {
+        path: 'sale-order',
+        name: 'SaleOrder',
+        component: () => import('@/views/sale-order/index.vue'),
+        meta: { title: '销售订单', icon: 'ShoppingCart' }
+      },
+      {
+        path: 'sale-item',
+        name: 'SaleItem',
+        component: () => import('@/views/sale-item/index.vue'),
+        meta: { title: '销售明细', icon: 'List' }
+      },
+      {
+        path: 'stock',
+        name: 'Stock',
+        component: () => import('@/views/stock/index.vue'),
+        meta: { title: '库存管理', icon: 'Goods' }
+      },
+      {
+        path: 'stock-check',
+        name: 'StockCheck',
+        component: () => import('@/views/stock-check/index.vue'),
+        meta: { title: '盘点管理', icon: 'DataAnalysis' }
+      },
+      {
+        path: 'sys-log',
+        name: 'SysLog',
+        component: () => import('@/views/sys-log/index.vue'),
+        meta: { title: '系统日志', icon: 'Document' }
+      }
+    ]
+  }
+]
+
+const router = createRouter({
+  history: createWebHistory(),
+  routes
+})
+
+export default router
