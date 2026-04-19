@@ -500,3 +500,153 @@ mvn spring-boot:run
 - DELETE http://localhost:8080/api/sale-order/{order_id}
 
 注意：由于 purchase_item 和 sale_item 有外键约束，删除主表前需要先删除明细表，或者直接在数据库中清理。
+
+---
+
+## Session 4：库存、盘点逻辑与系统日志 AOP ✅ 已完成
+
+### 一、新增目录结构
+
+```
+pharmacy-system/
+└── pharmacy-admin/
+    └── src/main/java/com/pharmacy/
+        ├── annotation/
+        │   └── OperateLog.java          # 系统日志注解
+        ├── aspect/
+        │   └── SysLogAspect.java         # 系统日志 AOP 切面
+        ├── config/
+        │   └── AsyncConfig.java          # 异步任务配置
+        ├── dto/
+        │   └── StockCheckCreateDTO.java  # 盘点创建 DTO
+        ├── entity/
+        │   ├── Stock.java                # 库存实体
+        │   ├── StockCheck.java           # 盘点记录实体
+        │   └── SysLog.java               # 系统日志实体
+        ├── mapper/
+        │   ├── StockMapper.java
+        │   ├── StockCheckMapper.java
+        │   └── SysLogMapper.java
+        ├── service/
+        │   ├── StockService.java
+        │   ├── StockCheckService.java
+        │   ├── SysLogService.java
+        │   └── impl/
+        │       ├── StockServiceImpl.java
+        │       ├── StockCheckServiceImpl.java
+        │       └── SysLogServiceImpl.java
+        └── controller/
+            ├── StockController.java
+            ├── StockCheckController.java
+            └── SysLogController.java
+```
+
+### 二、核心功能说明
+
+#### 1. 库存管理 (Stock)
+- 按药品和批号管理库存
+- 记录库存数量、采购价格、效期、药柜位置等信息
+
+#### 2. 盘点管理 (StockCheck)
+- **创建盘点单接口**：`POST /api/stock-check/create`
+- 自动计算盈亏数量和盈亏金额
+- 盈亏数量 = 实际库存 - 系统库存
+- 盈亏金额 = 盈亏数量 × 单位成本价
+- 支持批量创建盘点记录
+
+#### 3. 系统日志 AOP (SysLog)
+- **@SysLog 注解**：用于标记需要记录日志的 Controller 方法
+- **AOP 切面**：拦截带有 @SysLog 注解的方法
+- **异步保存**：使用 @Async 异步保存日志，不影响主业务性能
+- 记录信息包括：操作模块、操作类型、操作内容、IP地址、操作时间等
+
+### 三、@SysLog 注解使用示例
+
+```java
+@PostMapping("/create")
+@SysLog(module = "库存管理", type = "新增", content = "创建盘点单")
+public Result<List<StockCheck>> create(@RequestBody StockCheckCreateDTO dto) {
+    // 业务逻辑
+}
+```
+
+### 四、核心 API 路径列表
+
+| 模块      | 基础路径               | 说明                   |
+| ------- | ------------------ | -------------------- |
+| 库存管理    | /api/stock          | 库存信息 CRUD         |
+| 盘点管理    | /api/stock-check    | 盘点记录 CRUD + 批量创建 |
+| 系统日志    | /api/sys-log        | 系统日志查询           |
+
+### 五、Session 4 测试方法
+
+#### 前置条件
+同 Session 1，确保数据库已创建并连接正常。
+
+#### 测试步骤
+
+##### 1. 编译并启动后端服务
+```bash
+cd pharmacy-admin
+mvn clean compile
+mvn spring-boot:run
+```
+
+##### 2. 测试创建盘点单
+
+**接口**：POST http://localhost:8080/api/stock-check/create
+
+**请求头**：Content-Type: application/json
+
+**请求体**：
+```json
+{
+  "checkNo": "CHECK20260419001",
+  "checkUser": 1,
+  "checkTime": "2026-04-19T10:00:00",
+  "remark": "月度盘点",
+  "items": [
+    {
+      "medId": 1,
+      "batchNo": "20250101A",
+      "systemStock": 100,
+      "actualStock": 98,
+      "unitPrice": 8.20,
+      "reason": "正常损耗",
+      "remark": ""
+    },
+    {
+      "medId": 2,
+      "batchNo": "20231205B",
+      "systemStock": 10,
+      "actualStock": 12,
+      "unitPrice": 420.00,
+      "reason": "入库差异",
+      "remark": ""
+    }
+  ]
+}
+```
+
+**预期结果**：
+- 返回 code=200 的成功响应
+- data 中包含创建的盘点记录列表
+- 每条记录自动计算了 profit_loss（盈亏数量）和 profit_loss_amount（盈亏金额）
+- 第一条记录：profit_loss=-2, profit_loss_amount=-16.40
+- 第二条记录：profit_loss=2, profit_loss_amount=840.00
+
+##### 3. 验证系统日志
+
+**接口**：GET http://localhost:8080/api/sys-log/list
+
+**预期结果**：
+- 可以查询到刚才创建盘点单时自动记录的系统日志
+- 日志包含操作模块、操作类型、操作内容、IP地址等信息
+
+##### 4. 验证库存列表
+
+**接口**：GET http://localhost:8080/api/stock/list
+
+---
+
+## 后端核心业务（Session 4）开发完毕
