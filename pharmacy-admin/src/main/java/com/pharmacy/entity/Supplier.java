@@ -38,6 +38,7 @@ public class Supplier {
     private String bankInfo;
 
     @TableField("status")
+    @TableLogic
     private Integer status;
 
     @TableField("remark")

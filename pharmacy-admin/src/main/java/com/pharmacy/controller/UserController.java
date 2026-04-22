@@ -42,10 +42,18 @@ public class UserController {
     @GetMapping("/list")
     public Result<Page<User>> list(
             @RequestParam(defaultValue = "1") Integer current,
-            @RequestParam(defaultValue = "10") Integer size) {
+            @RequestParam(defaultValue = "10") Integer size,
+            @RequestParam(required = false) String username,
+            @RequestParam(required = false) String realName) {
         Page<User> page = new Page<>(current, size);
         LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
-        wrapper.orderByDesc(User::getCreateTime);
+        if (username != null && !username.isEmpty()) {
+            wrapper.like(User::getUsername, username);
+        }
+        if (realName != null && !realName.isEmpty()) {
+            wrapper.like(User::getRealName, realName);
+        }
+        wrapper.orderByAsc(User::getUserId);
         return Result.success(userService.page(page, wrapper));
     }
 }

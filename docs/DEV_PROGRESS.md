@@ -141,3 +141,38 @@ mvn spring-boot:run
 - Main：路由视图容器
 
 ## 整体项目架构 ✅ 已搭建完成
+
+---
+
+## Session 6：基础档案页面开发（一）✅ 已完成
+
+**新增文件：**
+- `pharmacy-ui/src/api/supplier.js - 供应商 API 封装
+- `pharmacy-ui/src/api/customer.js - 顾客 API 封装
+- `pharmacy-ui/src/api/user.js - 用户 API 封装
+- `pharmacy-ui/src/views/supplier/index.vue - 供应商管理页面
+- `pharmacy-ui/src/views/customer/index.vue - 顾客管理页面
+- `pharmacy-ui/src/views/user/index.vue - 用户管理页面
+
+**统一页面风格：**
+- 顶部：查询表单（支持重置
+- 中部：数据表格（支持多选、分页
+- 底部：操作按钮（新增、批量删除
+- 表单：Dialog 弹窗（支持新增/编辑
+
+**供应商页面 - 表单字段：**
+- 供应商名称（必填）、简称（必填）、联系人（必填）、手机号（必填，格式校验）、电话
+- 地址（textarea）、营业执照号、供应类型、银行信息、状态（启用/禁用）、备注（textarea）
+
+**顾客页面 - 表单字段：**
+- 顾客姓名（必填）、手机号（必填，格式校验）、是否会员（单选）、会员等级、累计消费
+- 生日（日期选择）、地址（textarea）、状态（启用/禁用）、备注（textarea）
+
+**用户页面 - 表单字段：**
+- 用户名（必填，编辑时不可改）、密码（必填，最少6位）、真实姓名（必填）、角色（下拉选择）
+- 手机号（必填，格式校验）、状态（启用/禁用）、备注（textarea）
+
+**API 封装规范：**
+- 统一从 src/api/ 目录下按模块划分
+- 导出 getXxxList、getXxxById、addXxx、updateXxx、deleteXxx 标准方法
+- 使用 src/utils/request.js 统一请求拦截器处理

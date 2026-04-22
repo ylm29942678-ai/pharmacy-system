@@ -34,6 +34,7 @@ public class Customer {
     private String address;
 
     @TableField("status")
+    @TableLogic
     private Integer status;
 
     @TableField("remark")

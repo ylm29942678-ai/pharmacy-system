@@ -42,10 +42,18 @@ public class SupplierController {
     @GetMapping("/list")
     public Result<Page<Supplier>> list(
             @RequestParam(defaultValue = "1") Integer current,
-            @RequestParam(defaultValue = "10") Integer size) {
+            @RequestParam(defaultValue = "10") Integer size,
+            @RequestParam(required = false) String supplierName,
+            @RequestParam(required = false) String contact) {
         Page<Supplier> page = new Page<>(current, size);
         LambdaQueryWrapper<Supplier> wrapper = new LambdaQueryWrapper<>();
-        wrapper.orderByDesc(Supplier::getCreateTime);
+        if (supplierName != null && !supplierName.isEmpty()) {
+            wrapper.like(Supplier::getSupplierName, supplierName);
+        }
+        if (contact != null && !contact.isEmpty()) {
+            wrapper.like(Supplier::getContact, contact);
+        }
+        wrapper.orderByAsc(Supplier::getSupplierId);
         return Result.success(supplierService.page(page, wrapper));
     }
 }

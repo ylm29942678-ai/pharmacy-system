@@ -35,7 +35,7 @@ CREATE TABLE `customer`  (
   `create_time` datetime NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time` datetime NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '最后更新时间',
   PRIMARY KEY (`cust_id`) USING BTREE,
-  UNIQUE INDEX `uk_phone`(`phone` ASC) USING BTREE
+  INDEX `idx_phone`(`phone` ASC) USING BTREE COMMENT '手机号索引，用于查询'
 ) ENGINE = InnoDB AUTO_INCREMENT = 3 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '顾客/会员信息表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------

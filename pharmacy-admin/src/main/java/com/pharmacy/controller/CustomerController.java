@@ -42,10 +42,22 @@ public class CustomerController {
     @GetMapping("/list")
     public Result<Page<Customer>> list(
             @RequestParam(defaultValue = "1") Integer current,
-            @RequestParam(defaultValue = "10") Integer size) {
+            @RequestParam(defaultValue = "10") Integer size,
+            @RequestParam(required = false) String custName,
+            @RequestParam(required = false) String phone,
+            @RequestParam(required = false) Integer isMember) {
         Page<Customer> page = new Page<>(current, size);
         LambdaQueryWrapper<Customer> wrapper = new LambdaQueryWrapper<>();
-        wrapper.orderByDesc(Customer::getCreateTime);
+        if (custName != null && !custName.isEmpty()) {
+            wrapper.like(Customer::getCustName, custName);
+        }
+        if (phone != null && !phone.isEmpty()) {
+            wrapper.like(Customer::getPhone, phone);
+        }
+        if (isMember != null) {
+            wrapper.eq(Customer::getIsMember, isMember);
+        }
+        wrapper.orderByAsc(Customer::getCustId);
         return Result.success(customerService.page(page, wrapper));
     }
 }
