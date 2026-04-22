@@ -42,10 +42,24 @@ public class MedicineController {
     @GetMapping("/list")
     public Result<Page<Medicine>> list(
             @RequestParam(defaultValue = "1") Integer current,
-            @RequestParam(defaultValue = "10") Integer size) {
+            @RequestParam(defaultValue = "10") Integer size,
+            @RequestParam(required = false) String medName,
+            @RequestParam(required = false) String medType,
+            @RequestParam(required = false) String status) {
         Page<Medicine> page = new Page<>(current, size);
         LambdaQueryWrapper<Medicine> wrapper = new LambdaQueryWrapper<>();
-        wrapper.orderByDesc(Medicine::getCreateTime);
+        if (medName != null && !medName.isEmpty()) {
+            wrapper.like(Medicine::getMedName, medName);
+        }
+        if (medType != null && !medType.isEmpty()) {
+            wrapper.eq(Medicine::getMedType, medType);
+        }
+        if (status != null && !status.isEmpty()) {
+            wrapper.eq(Medicine::getStatus, Integer.parseInt(status));
+        } else {
+            wrapper.eq(Medicine::getStatus, 1);
+        }
+        wrapper.orderByAsc(Medicine::getMedId);
         return Result.success(medicineService.page(page, wrapper));
     }
 }
