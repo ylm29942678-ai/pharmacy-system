@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 @Data
 @TableName("sale_order")
 public class SaleOrder {
-    @TableId(value = "order_id", type = IdType.INPUT)
+    @TableId(value = "order_id", type = IdType.AUTO)
     private Long orderId;
 
     @TableField("cust_id")

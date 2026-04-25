@@ -44,6 +44,12 @@ const routes = [
         meta: { title: '采购订单', icon: 'Document' }
       },
       {
+        path: 'purchase-order/form',
+        name: 'PurchaseOrderForm',
+        component: () => import('@/views/purchase-order/form.vue'),
+        meta: { title: '采购单编辑', hidden: true }
+      },
+      {
         path: 'purchase-item',
         name: 'PurchaseItem',
         component: () => import('@/views/purchase-item/index.vue'),
@@ -54,6 +60,12 @@ const routes = [
         name: 'SaleOrder',
         component: () => import('@/views/sale-order/index.vue'),
         meta: { title: '销售订单', icon: 'ShoppingCart' }
+      },
+      {
+        path: 'sale-order/form',
+        name: 'SaleOrderForm',
+        component: () => import('@/views/sale-order/form.vue'),
+        meta: { title: '销售单编辑', hidden: true }
       },
       {
         path: 'sale-item',

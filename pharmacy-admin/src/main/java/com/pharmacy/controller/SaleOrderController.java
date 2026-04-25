@@ -4,10 +4,15 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.pharmacy.common.Result;
 import com.pharmacy.dto.SaleOrderCreateDTO;
+import com.pharmacy.entity.SaleItem;
 import com.pharmacy.entity.SaleOrder;
+import com.pharmacy.service.SaleItemService;
 import com.pharmacy.service.SaleOrderService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/sale-order")
@@ -16,12 +21,16 @@ public class SaleOrderController {
     @Autowired
     private SaleOrderService saleOrderService;
 
+    @Autowired
+    private SaleItemService saleItemService;
+
     @PostMapping("/create")
     public Result<SaleOrder> create(@RequestBody SaleOrderCreateDTO dto) {
         try {
             SaleOrder order = saleOrderService.createSaleOrder(dto);
             return Result.success(order);
         } catch (Exception e) {
+            e.printStackTrace();
             return Result.error("创建销售单失败：" + e.getMessage());
         }
     }
@@ -33,9 +42,26 @@ public class SaleOrderController {
     }
 
     @DeleteMapping("/{id}")
+    @Transactional(rollbackFor = Exception.class)
     public Result<Void> delete(@PathVariable Long id) {
+        LambdaQueryWrapper<SaleItem> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(SaleItem::getOrderId, id);
+        saleItemService.remove(wrapper);
+        
         boolean success = saleOrderService.removeById(id);
         return success ? Result.success() : Result.error("删除失败");
+    }
+
+    @DeleteMapping("/batch")
+    @Transactional(rollbackFor = Exception.class)
+    public Result<Void> batchDelete(@RequestBody List<Long> ids) {
+        for (Long id : ids) {
+            LambdaQueryWrapper<SaleItem> wrapper = new LambdaQueryWrapper<>();
+            wrapper.eq(SaleItem::getOrderId, id);
+            saleItemService.remove(wrapper);
+        }
+        boolean success = saleOrderService.removeByIds(ids);
+        return success ? Result.success() : Result.error("批量删除失败");
     }
 
     @PutMapping
@@ -56,7 +82,7 @@ public class SaleOrderController {
             @RequestParam(defaultValue = "10") Integer size) {
         Page<SaleOrder> page = new Page<>(current, size);
         LambdaQueryWrapper<SaleOrder> wrapper = new LambdaQueryWrapper<>();
-        wrapper.orderByDesc(SaleOrder::getCreateTime);
+        wrapper.orderByAsc(SaleOrder::getCreateTime);
         return Result.success(saleOrderService.page(page, wrapper));
     }
 }

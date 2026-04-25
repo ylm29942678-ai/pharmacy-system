@@ -42,9 +42,13 @@ public class SaleItemController {
     @GetMapping("/list")
     public Result<Page<SaleItem>> list(
             @RequestParam(defaultValue = "1") Integer current,
-            @RequestParam(defaultValue = "10") Integer size) {
+            @RequestParam(defaultValue = "10") Integer size,
+            @RequestParam(required = false) Long orderId) {
         Page<SaleItem> page = new Page<>(current, size);
         LambdaQueryWrapper<SaleItem> wrapper = new LambdaQueryWrapper<>();
+        if (orderId != null) {
+            wrapper.eq(SaleItem::getOrderId, orderId);
+        }
         wrapper.orderByDesc(SaleItem::getCreateTime);
         return Result.success(saleItemService.page(page, wrapper));
     }

@@ -41,6 +41,9 @@ public class PurchaseOrderServiceImpl extends ServiceImpl<PurchaseOrderMapper, P
             BeanUtils.copyProperties(itemDTO, item);
             item.setPurchaseId(purchaseId);
             item.setCreateTime(LocalDateTime.now());
+            if (item.getBatchNo() == null || item.getBatchNo().trim().isEmpty()) {
+                item.setBatchNo("DEFAULT");
+            }
             items.add(item);
         }
         purchaseItemService.saveBatch(items);

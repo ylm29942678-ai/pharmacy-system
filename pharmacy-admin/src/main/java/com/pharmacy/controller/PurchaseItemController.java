@@ -42,9 +42,13 @@ public class PurchaseItemController {
     @GetMapping("/list")
     public Result<Page<PurchaseItem>> list(
             @RequestParam(defaultValue = "1") Integer current,
-            @RequestParam(defaultValue = "10") Integer size) {
+            @RequestParam(defaultValue = "10") Integer size,
+            @RequestParam(required = false) Long purchaseId) {
         Page<PurchaseItem> page = new Page<>(current, size);
         LambdaQueryWrapper<PurchaseItem> wrapper = new LambdaQueryWrapper<>();
+        if (purchaseId != null) {
+            wrapper.eq(PurchaseItem::getPurchaseId, purchaseId);
+        }
         wrapper.orderByDesc(PurchaseItem::getCreateTime);
         return Result.success(purchaseItemService.page(page, wrapper));
     }

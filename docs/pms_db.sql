@@ -160,7 +160,7 @@ INSERT INTO `sale_item` VALUES (1, 202604130001, 1, '20250101A', 2, 15.50, 31.00
 -- ----------------------------
 DROP TABLE IF EXISTS `sale_order`;
 CREATE TABLE `sale_order`  (
-  `order_id` bigint NOT NULL COMMENT '主键，订单号（支持时间戳生成）',
+  `order_id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键，订单号（支持时间戳生成）',
   `cust_id` int NULL DEFAULT NULL COMMENT '关联顾客表customer.cust_id，顾客ID',
   `user_id` int NOT NULL COMMENT '关联用户表user.user_id，操作员/店员',
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '订单创建时间',
@@ -175,7 +175,7 @@ CREATE TABLE `sale_order`  (
   INDEX `fk_sale_user`(`user_id` ASC) USING BTREE,
   CONSTRAINT `fk_sale_customer` FOREIGN KEY (`cust_id`) REFERENCES `customer` (`cust_id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `fk_sale_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '销售订单主表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 202604130002 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '销售订单主表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of sale_order

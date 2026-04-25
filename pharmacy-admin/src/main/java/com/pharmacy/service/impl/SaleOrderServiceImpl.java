@@ -31,23 +31,43 @@ public class SaleOrderServiceImpl extends ServiceImpl<SaleOrderMapper, SaleOrder
     @Override
     @Transactional(rollbackFor = Exception.class)
     public SaleOrder createSaleOrder(SaleOrderCreateDTO dto) {
+        System.out.println("开始创建销售订单，DTO数据: " + dto);
+        
         SaleOrder saleOrder = new SaleOrder();
-        BeanUtils.copyProperties(dto, saleOrder);
+        // 只复制需要的字段，不复制orderId让它自增
+        saleOrder.setCustId(dto.getCustId());
+        saleOrder.setUserId(dto.getUserId());
+        saleOrder.setTotalPrice(dto.getTotalPrice());
+        saleOrder.setPayType(dto.getPayType());
+        saleOrder.setOrderType(dto.getOrderType());
+        saleOrder.setPayStatus(dto.getPayStatus());
+        saleOrder.setRemark(dto.getRemark());
         saleOrder.setCreateTime(LocalDateTime.now());
         saleOrder.setUpdateTime(LocalDateTime.now());
         
+        System.out.println("准备保存销售订单: " + saleOrder);
         save(saleOrder);
+        System.out.println("销售订单已保存，生成的orderId: " + saleOrder.getOrderId());
         
         Long orderId = saleOrder.getOrderId();
         List<SaleItem> items = new ArrayList<>();
         for (SaleItemDTO itemDTO : dto.getItems()) {
             SaleItem item = new SaleItem();
-            BeanUtils.copyProperties(itemDTO, item);
+            item.setMedId(itemDTO.getMedId());
+            item.setBatchNo(itemDTO.getBatchNo());
+            item.setQuantity(itemDTO.getQuantity());
+            item.setUnitPrice(itemDTO.getUnitPrice());
+            item.setTotalPrice(itemDTO.getTotalPrice());
             item.setOrderId(orderId);
             item.setCreateTime(LocalDateTime.now());
+            if (item.getBatchNo() == null || item.getBatchNo().trim().isEmpty()) {
+                item.setBatchNo("DEFAULT");
+            }
             items.add(item);
         }
+        System.out.println("准备保存 " + items.size() + " 条销售明细");
         saleItemService.saveBatch(items);
+        System.out.println("销售明细已保存");
         
         if (dto.getCustId() != null) {
             Customer customer = customerService.getById(dto.getCustId());
