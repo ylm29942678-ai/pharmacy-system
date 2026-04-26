@@ -1,10 +1,12 @@
 package com.pharmacy.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.pharmacy.common.Result;
 import com.pharmacy.entity.Stock;
 import com.pharmacy.service.StockService;
+import com.pharmacy.vo.StockVO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -40,12 +42,20 @@ public class StockController {
     }
 
     @GetMapping("/list")
-    public Result<Page<Stock>> list(
+    public Result<IPage<Stock>> list(
             @RequestParam(defaultValue = "1") Integer current,
             @RequestParam(defaultValue = "10") Integer size) {
         Page<Stock> page = new Page<>(current, size);
         LambdaQueryWrapper<Stock> wrapper = new LambdaQueryWrapper<>();
         wrapper.orderByDesc(Stock::getCreateTime);
         return Result.success(stockService.page(page, wrapper));
+    }
+    
+    @GetMapping("/list/with-medicine")
+    public Result<IPage<StockVO>> listWithMedicine(
+            @RequestParam(defaultValue = "1") Integer current,
+            @RequestParam(defaultValue = "10") Integer size) {
+        Page<StockVO> page = new Page<>(current, size);
+        return Result.success(stockService.getStockPageWithMedicine(page));
     }
 }
