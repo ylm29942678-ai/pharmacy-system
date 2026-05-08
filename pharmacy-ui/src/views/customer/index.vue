@@ -15,7 +15,7 @@
           <el-input v-model="queryForm.phone" placeholder="请输入手机号" clearable />
         </el-form-item>
         <el-form-item label="是否会员">
-          <el-select v-model="queryForm.isMember" placeholder="全部" clearable>
+          <el-select v-model="queryForm.isMember" placeholder="全部" clearable style="width: 120px">
             <el-option label="是" :value="1" />
             <el-option label="否" :value="0" />
           </el-select>

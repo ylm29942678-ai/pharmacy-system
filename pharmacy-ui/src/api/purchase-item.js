@@ -37,3 +37,10 @@ export const deletePurchaseItem = (id) => {
     method: 'delete'
   })
 }
+
+export const stockInPurchaseItems = (purchaseId) => {
+  return request({
+    url: `/purchase-item/stock-in/${purchaseId}`,
+    method: 'post'
+  })
+}

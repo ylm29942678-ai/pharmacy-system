@@ -47,9 +47,17 @@
           </template>
         </el-table-column>
         <el-table-column prop="createTime" label="创建时间" width="180" />
-        <el-table-column label="操作" width="200" fixed="right">
+        <el-table-column label="操作" width="280" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" size="small" @click="handleEdit(row)">编辑</el-button>
+            <el-button
+              type="warning"
+              size="small"
+              :disabled="!canManagePassword"
+              @click="handleChangePassword(row)"
+            >
+              修改密码
+            </el-button>
             <el-button type="danger" size="small" @click="handleDelete(row)">删除</el-button>
           </template>
         </el-table-column>
@@ -88,11 +96,7 @@
           <el-input v-model="formData.realName" placeholder="请输入真实姓名" />
         </el-form-item>
         <el-form-item label="角色" prop="role">
-          <el-select v-model="formData.role" placeholder="请选择角色" style="width: 100%">
-            <el-option label="管理员" value="admin" />
-            <el-option label="营业员" value="clerk" />
-            <el-option label="财务" value="finance" />
-          </el-select>
+          <el-input v-model="formData.role" placeholder="请输入角色，如：admin 或 staff" />
         </el-form-item>
         <el-form-item label="手机号" prop="phone">
           <el-input v-model="formData.phone" placeholder="请输入手机号" />
@@ -112,11 +116,36 @@
         <el-button type="primary" @click="handleSubmit">确定</el-button>
       </template>
     </el-dialog>
+
+    <el-dialog
+      v-model="passwordDialogVisible"
+      title="修改密码"
+      width="420px"
+      destroy-on-close
+    >
+      <el-form
+        ref="passwordFormRef"
+        :model="passwordForm"
+        :rules="passwordRules"
+        label-width="90px"
+      >
+        <el-form-item label="用户名">
+          <el-input v-model="passwordForm.username" disabled />
+        </el-form-item>
+        <el-form-item label="新密码" prop="password">
+          <el-input v-model="passwordForm.password" type="password" placeholder="请输入新密码" show-password />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="passwordDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="handlePasswordSubmit">确定</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { computed, ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getUserList, addUser, updateUser, deleteUser } from '@/api/user'
 
@@ -126,6 +155,9 @@ const multipleSelection = ref([])
 const dialogVisible = ref(false)
 const dialogTitle = ref('新增用户')
 const formRef = ref(null)
+const passwordDialogVisible = ref(false)
+const passwordFormRef = ref(null)
+const currentUser = ref({})
 
 const queryForm = reactive({
   username: '',
@@ -149,18 +181,40 @@ const formData = reactive({
   remark: ''
 })
 
-const formRules = {
+const formRules = computed(() => ({
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
-  password: [
+  password: formData.userId ? [] : [
     { required: true, message: '请输入密码', trigger: 'blur' },
     { min: 6, message: '密码长度不能少于6位', trigger: 'blur' }
   ],
   realName: [{ required: true, message: '请输入真实姓名', trigger: 'blur' }],
-  role: [{ required: true, message: '请选择角色', trigger: 'change' }],
+  role: [{ required: true, message: '请输入角色', trigger: 'blur' }],
   phone: [
     { required: true, message: '请输入手机号', trigger: 'blur' },
     { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号', trigger: 'blur' }
   ]
+}))
+
+const passwordForm = reactive({
+  userId: null,
+  username: '',
+  password: ''
+})
+
+const passwordRules = {
+  password: [
+    { required: true, message: '请输入新密码', trigger: 'blur' },
+    { min: 6, message: '密码长度不能少于6位', trigger: 'blur' }
+  ]
+}
+
+const canManagePassword = computed(() => ['admin', '店长'].includes(currentUser.value.role))
+
+const getCurrentUser = () => {
+  const info = localStorage.getItem('userInfo')
+  if (info) {
+    currentUser.value = JSON.parse(info)
+  }
 }
 
 const fetchData = async () => {
@@ -221,6 +275,19 @@ const handleEdit = (row) => {
   dialogVisible.value = true
 }
 
+const handleChangePassword = (row) => {
+  if (!canManagePassword.value) {
+    ElMessage.warning('只有管理员可以修改成员密码')
+    return
+  }
+  Object.assign(passwordForm, {
+    userId: row.userId,
+    username: row.username,
+    password: ''
+  })
+  passwordDialogVisible.value = true
+}
+
 const handleSubmit = async () => {
   if (!formRef.value) return
   await formRef.value.validate(async (valid) => {
@@ -234,6 +301,32 @@ const handleSubmit = async () => {
         }
       } catch (error) {
         ElMessage.error('操作失败')
+      }
+    }
+  })
+}
+
+const handlePasswordSubmit = async () => {
+  if (!passwordFormRef.value) return
+  await passwordFormRef.value.validate(async (valid) => {
+    if (valid) {
+      const user = tableData.value.find(item => item.userId === passwordForm.userId)
+      if (!user) {
+        ElMessage.error('未找到用户信息')
+        return
+      }
+      try {
+        const res = await updateUser({
+          ...user,
+          password: passwordForm.password
+        })
+        if (res.code === 200) {
+          ElMessage.success('密码修改成功')
+          passwordDialogVisible.value = false
+          fetchData()
+        }
+      } catch (error) {
+        ElMessage.error('密码修改失败')
       }
     }
   })
@@ -276,6 +369,7 @@ const handleBatchDelete = () => {
 }
 
 onMounted(() => {
+  getCurrentUser()
   fetchData()
 })
 </script>

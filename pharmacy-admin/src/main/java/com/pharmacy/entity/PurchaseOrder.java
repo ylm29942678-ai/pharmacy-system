@@ -14,8 +14,14 @@ public class PurchaseOrder {
     @TableField("supplier_id")
     private Integer supplierId;
 
+    @TableField(exist = false)
+    private String supplierName;
+
     @TableField("user_id")
     private Integer userId;
+
+    @TableField(exist = false)
+    private String userRealName;
 
     @TableField("purchase_time")
     private LocalDateTime purchaseTime;

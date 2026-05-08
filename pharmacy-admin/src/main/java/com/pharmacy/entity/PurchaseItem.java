@@ -18,6 +18,9 @@ public class PurchaseItem {
     @TableField("med_id")
     private Integer medId;
 
+    @TableField(exist = false)
+    private String medName;
+
     @TableField("batch_no")
     private String batchNo;
 

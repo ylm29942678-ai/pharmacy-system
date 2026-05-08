@@ -3,7 +3,9 @@ package com.pharmacy.controller;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.pharmacy.common.Result;
+import com.pharmacy.entity.Medicine;
 import com.pharmacy.entity.SaleItem;
+import com.pharmacy.service.MedicineService;
 import com.pharmacy.service.SaleItemService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -14,6 +16,9 @@ public class SaleItemController {
 
     @Autowired
     private SaleItemService saleItemService;
+
+    @Autowired
+    private MedicineService medicineService;
 
     @PostMapping
     public Result<SaleItem> add(@RequestBody SaleItem saleItem) {
@@ -36,6 +41,7 @@ public class SaleItemController {
     @GetMapping("/{id}")
     public Result<SaleItem> getById(@PathVariable Long id) {
         SaleItem saleItem = saleItemService.getById(id);
+        fillDisplayNames(saleItem);
         return saleItem != null ? Result.success(saleItem) : Result.error("未找到数据");
     }
 
@@ -50,6 +56,20 @@ public class SaleItemController {
             wrapper.eq(SaleItem::getOrderId, orderId);
         }
         wrapper.orderByDesc(SaleItem::getCreateTime);
-        return Result.success(saleItemService.page(page, wrapper));
+        Page<SaleItem> resultPage = saleItemService.page(page, wrapper);
+        resultPage.getRecords().forEach(this::fillDisplayNames);
+        return Result.success(resultPage);
+    }
+
+    private void fillDisplayNames(SaleItem item) {
+        if (item == null) {
+            return;
+        }
+        if (item.getMedId() != null) {
+            Medicine medicine = medicineService.getById(item.getMedId());
+            if (medicine != null) {
+                item.setMedName(medicine.getMedName());
+            }
+        }
     }
 }

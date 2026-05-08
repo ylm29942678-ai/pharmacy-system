@@ -22,8 +22,8 @@
       >
         <el-table-column type="selection" width="55" />
         <el-table-column prop="orderId" label="订单ID" width="100" />
-        <el-table-column prop="custId" label="客户ID" width="100" />
-        <el-table-column prop="userId" label="用户ID" width="100" />
+        <el-table-column prop="custName" label="客户" min-width="140" />
+        <el-table-column prop="userRealName" label="操作员" width="120" />
         <el-table-column prop="createTime" label="创建时间" width="180" />
         <el-table-column prop="totalPrice" label="总金额" width="120" />
         <el-table-column prop="payType" label="支付方式" width="100" />
@@ -70,13 +70,27 @@
       >
         <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="客户ID" prop="custId">
-              <el-input v-model="formData.custId" placeholder="请输入客户ID" />
+            <el-form-item label="客户" prop="custId">
+              <el-select v-model="formData.custId" placeholder="请选择客户" style="width: 100%">
+                <el-option
+                  v-for="item in customerOptions"
+                  :key="item.custId"
+                  :label="item.custName"
+                  :value="item.custId"
+                />
+              </el-select>
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="用户ID" prop="userId">
-              <el-input v-model="formData.userId" placeholder="请输入用户ID" />
+            <el-form-item label="操作员" prop="userId">
+              <el-select v-model="formData.userId" placeholder="请选择操作员" style="width: 100%">
+                <el-option
+                  v-for="item in userOptions"
+                  :key="item.userId"
+                  :label="item.realName"
+                  :value="item.userId"
+                />
+              </el-select>
             </el-form-item>
           </el-col>
         </el-row>
@@ -124,6 +138,8 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getSaleOrderList, addSaleOrder, updateSaleOrder, deleteSaleOrder, batchDeleteSaleOrder } from '@/api/sale-order'
+import { getCustomerList } from '@/api/customer'
+import { getUserList } from '@/api/user'
 
 const router = useRouter()
 const loading = ref(false)
@@ -132,6 +148,8 @@ const multipleSelection = ref([])
 const dialogVisible = ref(false)
 const dialogTitle = ref('新增销售订单')
 const formRef = ref(null)
+const customerOptions = ref([])
+const userOptions = ref([])
 
 const pagination = reactive({
   current: 1,
@@ -151,8 +169,25 @@ const formData = reactive({
 })
 
 const formRules = {
-  custId: [{ required: true, message: '请输入客户ID', trigger: 'blur' }],
-  userId: [{ required: true, message: '请输入用户ID', trigger: 'blur' }]
+  custId: [{ required: true, message: '请选择客户', trigger: 'change' }],
+  userId: [{ required: true, message: '请选择操作员', trigger: 'change' }]
+}
+
+const fetchOptions = async () => {
+  try {
+    const [customerRes, userRes] = await Promise.all([
+      getCustomerList({ current: 1, size: 1000 }),
+      getUserList({ current: 1, size: 1000 })
+    ])
+    if (customerRes.code === 200) {
+      customerOptions.value = customerRes.data.records
+    }
+    if (userRes.code === 200) {
+      userOptions.value = userRes.data.records
+    }
+  } catch (error) {
+    ElMessage.error('获取基础数据失败')
+  }
 }
 
 const fetchData = async () => {
@@ -250,6 +285,7 @@ const handleViewDetail = (row) => {
 }
 
 onMounted(() => {
+  fetchOptions()
   fetchData()
 })
 </script>

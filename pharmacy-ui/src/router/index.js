@@ -3,6 +3,12 @@ import Layout from '@/layout/index.vue'
 
 const routes = [
   {
+    path: '/login',
+    name: 'Login',
+    component: () => import('@/views/login/index.vue'),
+    meta: { hidden: true }
+  },
+  {
     path: '/',
     component: Layout,
     redirect: '/dashboard',
@@ -35,7 +41,7 @@ const routes = [
         path: 'user',
         name: 'User',
         component: () => import('@/views/user/index.vue'),
-        meta: { title: '用户管理', icon: 'Avatar' }
+        meta: { title: '用户管理', icon: 'Avatar', roles: ['admin'] }
       },
       {
         path: 'purchase-order',
@@ -89,7 +95,7 @@ const routes = [
         path: 'sys-log',
         name: 'SysLog',
         component: () => import('@/views/sys-log/index.vue'),
-        meta: { title: '系统日志', icon: 'Document' }
+        meta: { title: '系统日志', icon: 'Document', roles: ['admin'] }
       }
     ]
   }
@@ -98,6 +104,36 @@ const routes = [
 const router = createRouter({
   history: createWebHistory(),
   routes
+})
+
+router.beforeEach((to, from, next) => {
+  const userInfo = localStorage.getItem('userInfo')
+  
+  if (to.path === '/login') {
+    if (userInfo) {
+      next('/')
+    } else {
+      next()
+    }
+  } else {
+    if (userInfo) {
+      let user = {}
+      try {
+        user = JSON.parse(userInfo)
+      } catch (error) {
+        localStorage.removeItem('userInfo')
+        next('/login')
+        return
+      }
+      if (to.meta.roles && !to.meta.roles.includes(user.role)) {
+        next('/')
+        return
+      }
+      next()
+    } else {
+      next('/login')
+    }
+  }
 })
 
 export default router

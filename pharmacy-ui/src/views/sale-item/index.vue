@@ -25,7 +25,7 @@
         <el-table-column type="selection" width="55" />
         <el-table-column prop="itemId" label="明细ID" width="100" />
         <el-table-column prop="orderId" label="订单ID" width="100" />
-        <el-table-column prop="medId" label="药品ID" width="100" />
+        <el-table-column prop="medName" label="药品名称" min-width="150" />
         <el-table-column prop="batchNo" label="批号" width="120" />
         <el-table-column prop="quantity" label="销售数量" width="100" />
         <el-table-column prop="unitPrice" label="销售单价" width="120" />
@@ -69,8 +69,15 @@
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="药品ID" prop="medId">
-              <el-input v-model="formData.medId" placeholder="请输入药品ID" />
+            <el-form-item label="药品" prop="medId">
+              <el-select v-model="formData.medId" placeholder="请选择药品" style="width: 100%">
+                <el-option
+                  v-for="item in medicineOptions"
+                  :key="item.medId"
+                  :label="item.medName"
+                  :value="item.medId"
+                />
+              </el-select>
             </el-form-item>
           </el-col>
         </el-row>
@@ -112,6 +119,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getSaleItemList, addSaleItem, updateSaleItem, deleteSaleItem } from '@/api/sale-item'
+import { getMedicineList } from '@/api/medicine'
 
 const router = useRouter()
 const route = useRoute()
@@ -122,6 +130,7 @@ const dialogVisible = ref(false)
 const dialogTitle = ref('新增销售明细')
 const formRef = ref(null)
 const currentOrderId = ref(null)
+const medicineOptions = ref([])
 
 const pagination = reactive({
   current: 1,
@@ -141,7 +150,18 @@ const formData = reactive({
 
 const formRules = {
   orderId: [{ required: true, message: '请输入订单ID', trigger: 'blur' }],
-  medId: [{ required: true, message: '请输入药品ID', trigger: 'blur' }]
+  medId: [{ required: true, message: '请选择药品', trigger: 'change' }]
+}
+
+const fetchOptions = async () => {
+  try {
+    const res = await getMedicineList({ current: 1, size: 1000 })
+    if (res.code === 200) {
+      medicineOptions.value = res.data.records
+    }
+  } catch (error) {
+    ElMessage.error('获取药品列表失败')
+  }
 }
 
 const fetchData = async () => {
@@ -249,6 +269,7 @@ const handleBack = () => {
 }
 
 onMounted(() => {
+  fetchOptions()
   if (route.query.order_id) {
     currentOrderId.value = parseInt(route.query.order_id)
   }

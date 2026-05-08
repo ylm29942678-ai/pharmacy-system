@@ -47,6 +47,11 @@
         <el-table-column prop="medId" label="ID" width="80" />
         <el-table-column prop="medName" label="药品名称" min-width="150" />
         <el-table-column prop="medAlias" label="别名" width="120" />
+        <el-table-column prop="supplierName" label="供应商" min-width="140">
+          <template #default="{ row }">
+            {{ row.supplierName || '-' }}
+          </template>
+        </el-table-column>
         <el-table-column prop="medType" label="类型" width="100" />
         <el-table-column prop="spec" label="规格" width="120" />
         <el-table-column prop="unit" label="单位" width="80" />
@@ -243,11 +248,22 @@ const formRules = {
 const fetchData = async () => {
   loading.value = true
   try {
-    const res = await getMedicineList({
+    const params = {
       current: pagination.current,
-      size: pagination.size,
-      ...queryForm
-    })
+      size: pagination.size
+    }
+    if (queryForm.medName) {
+      params.medName = queryForm.medName
+    }
+    if (queryForm.medType) {
+      params.medType = queryForm.medType
+    }
+    // 处理 status 参数，直接传递数字（包括0）
+    if (queryForm.status !== null && queryForm.status !== undefined) {
+      params.status = queryForm.status
+    }
+    console.log('请求参数:', params)
+    const res = await getMedicineList(params)
     if (res.code === 200) {
       tableData.value = res.data.records
       pagination.total = res.data.total

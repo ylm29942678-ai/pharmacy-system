@@ -37,7 +37,7 @@ public class SysLogAspect {
         try {
             saveLog(point, time);
         } catch (Exception e) {
-            e.printStackTrace();
+            // 日志写入失败不影响主业务流程
         }
         return result;
     }

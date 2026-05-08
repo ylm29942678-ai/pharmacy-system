@@ -4,13 +4,27 @@
       <template #header>
         <div class="card-header">
           <span>采购明细</span>
-          <el-tag v-if="currentPurchaseId" type="info">当前订单ID: {{ currentPurchaseId }}</el-tag>
+          <div class="header-tags" v-if="currentPurchaseId">
+            <el-tag type="info">当前订单ID: {{ currentPurchaseId }}</el-tag>
+            <el-tag :type="currentPurchaseOrder?.purchaseStatus === 1 ? 'success' : 'warning'">
+              {{ currentPurchaseOrder?.purchaseStatus === 1 ? '已入库' : '待入库' }}
+            </el-tag>
+          </div>
         </div>
       </template>
 
       <div class="table-toolbar">
-        <el-button type="primary" @click="handleAdd">新增</el-button>
-        <el-button type="danger" :disabled="multipleSelection.length === 0" @click="handleBatchDelete">批量删除</el-button>
+        <el-button type="primary" :disabled="isStockedIn" @click="handleAdd">新增</el-button>
+        <el-button
+          v-if="currentPurchaseId"
+          type="success"
+          :loading="stockInLoading"
+          :disabled="isStockedIn || tableData.length === 0"
+          @click="handleStockIn"
+        >
+          订单入库
+        </el-button>
+        <el-button type="danger" :disabled="multipleSelection.length === 0 || isStockedIn" @click="handleBatchDelete">批量删除</el-button>
         <el-button @click="handleBack" v-if="currentPurchaseId">返回订单列表</el-button>
       </div>
 
@@ -25,7 +39,7 @@
         <el-table-column type="selection" width="55" />
         <el-table-column prop="itemId" label="明细ID" width="100" />
         <el-table-column prop="purchaseId" label="订单ID" width="100" />
-        <el-table-column prop="medId" label="药品ID" width="100" />
+        <el-table-column prop="medName" label="药品名称" min-width="150" />
         <el-table-column prop="batchNo" label="批号" width="120" />
         <el-table-column prop="productionDate" label="生产日期" width="120" />
         <el-table-column prop="expireDate" label="有效期" width="120" />
@@ -36,8 +50,8 @@
         <el-table-column prop="remark" label="备注" min-width="150" />
         <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
-            <el-button type="warning" size="small" @click="handleEdit(row)">编辑</el-button>
-            <el-button type="danger" size="small" @click="handleDelete(row)">删除</el-button>
+            <el-button type="warning" size="small" :disabled="isStockedIn" @click="handleEdit(row)">编辑</el-button>
+            <el-button type="danger" size="small" :disabled="isStockedIn" @click="handleDelete(row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -72,8 +86,15 @@
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="药品ID" prop="medId">
-              <el-input v-model="formData.medId" placeholder="请输入药品ID" />
+            <el-form-item label="药品" prop="medId">
+              <el-select v-model="formData.medId" placeholder="请选择药品" style="width: 100%">
+                <el-option
+                  v-for="item in medicineOptions"
+                  :key="item.medId"
+                  :label="item.medName"
+                  :value="item.medId"
+                />
+              </el-select>
             </el-form-item>
           </el-col>
         </el-row>
@@ -85,7 +106,7 @@
           </el-col>
           <el-col :span="12">
             <el-form-item label="采购数量" prop="purchaseNum">
-              <el-input v-model="formData.purchaseNum" placeholder="请输入采购数量" />
+              <el-input-number v-model="formData.purchaseNum" :min="1" placeholder="请输入采购数量" style="width: 100%" @change="calculateTotalPrice" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -95,6 +116,7 @@
               <el-date-picker
                 v-model="formData.productionDate"
                 type="date"
+                value-format="YYYY-MM-DD"
                 placeholder="请选择生产日期"
                 style="width: 100%"
               />
@@ -105,6 +127,7 @@
               <el-date-picker
                 v-model="formData.expireDate"
                 type="date"
+                value-format="YYYY-MM-DD"
                 placeholder="请选择有效期"
                 style="width: 100%"
               />
@@ -114,12 +137,12 @@
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="采购单价" prop="purchasePrice">
-              <el-input v-model="formData.purchasePrice" placeholder="请输入采购单价" />
+              <el-input-number v-model="formData.purchasePrice" :min="0" :precision="2" placeholder="请输入采购单价" style="width: 100%" @change="calculateTotalPrice" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="总金额" prop="totalPrice">
-              <el-input v-model="formData.totalPrice" placeholder="请输入总金额" />
+              <el-input-number v-model="formData.totalPrice" :min="0" :precision="2" placeholder="请输入总金额" style="width: 100%" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -143,10 +166,12 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { computed, ref, reactive, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getPurchaseItemList, addPurchaseItem, updatePurchaseItem, deletePurchaseItem } from '@/api/purchase-item'
+import { getPurchaseItemList, addPurchaseItem, updatePurchaseItem, deletePurchaseItem, stockInPurchaseItems } from '@/api/purchase-item'
+import { getPurchaseOrderById } from '@/api/purchase-order'
+import { getMedicineList } from '@/api/medicine'
 
 const router = useRouter()
 const route = useRoute()
@@ -157,6 +182,10 @@ const dialogVisible = ref(false)
 const dialogTitle = ref('新增采购明细')
 const formRef = ref(null)
 const currentPurchaseId = ref(null)
+const currentPurchaseOrder = ref(null)
+const medicineOptions = ref([])
+const stockInLoading = ref(false)
+const isStockedIn = computed(() => currentPurchaseOrder.value?.purchaseStatus === 1)
 
 const pagination = reactive({
   current: 1,
@@ -180,7 +209,43 @@ const formData = reactive({
 
 const formRules = {
   purchaseId: [{ required: true, message: '请输入订单ID', trigger: 'blur' }],
-  medId: [{ required: true, message: '请输入药品ID', trigger: 'blur' }]
+  medId: [{ required: true, message: '请选择药品', trigger: 'change' }],
+  batchNo: [{ required: true, message: '请输入批号', trigger: 'blur' }],
+  purchaseNum: [{ required: true, message: '请输入采购数量', trigger: 'change' }],
+  purchasePrice: [{ required: true, message: '请输入采购单价', trigger: 'change' }],
+  expireDate: [{ required: true, message: '请选择有效期', trigger: 'change' }]
+}
+
+const fetchOptions = async () => {
+  try {
+    const res = await getMedicineList({ current: 1, size: 1000 })
+    if (res.code === 200) {
+      medicineOptions.value = res.data.records
+    }
+  } catch (error) {
+    ElMessage.error('获取药品列表失败')
+  }
+}
+
+const fetchPurchaseOrder = async () => {
+  if (!currentPurchaseId.value) {
+    currentPurchaseOrder.value = null
+    return
+  }
+  try {
+    const res = await getPurchaseOrderById(currentPurchaseId.value)
+    if (res.code === 200) {
+      currentPurchaseOrder.value = res.data
+    }
+  } catch (error) {
+    ElMessage.error('获取采购订单状态失败')
+  }
+}
+
+const calculateTotalPrice = () => {
+  const num = Number(formData.purchaseNum) || 0
+  const price = Number(formData.purchasePrice) || 0
+  formData.totalPrice = Number((num * price).toFixed(2))
 }
 
 const fetchData = async () => {
@@ -218,9 +283,9 @@ const handleAdd = () => {
     batchNo: '',
     productionDate: null,
     expireDate: null,
-    purchaseNum: null,
-    purchasePrice: null,
-    totalPrice: null,
+    purchaseNum: 1,
+    purchasePrice: 0,
+    totalPrice: 0,
     cabinet: '',
     remark: ''
   })
@@ -238,14 +303,21 @@ const handleSubmit = async () => {
   await formRef.value.validate(async (valid) => {
     if (valid) {
       try {
+        if (!formData.purchaseId) {
+          ElMessage.warning('请先从采购订单进入明细页，或填写有效的订单ID')
+          return
+        }
+        calculateTotalPrice()
         const res = formData.itemId ? await updatePurchaseItem(formData) : await addPurchaseItem(formData)
         if (res.code === 200) {
           ElMessage.success(formData.itemId ? '更新成功' : '添加成功')
           dialogVisible.value = false
           fetchData()
+        } else {
+          ElMessage.error(res.message || '操作失败')
         }
       } catch (error) {
-        ElMessage.error('操作失败')
+        ElMessage.error(error?.response?.data?.message || '操作失败')
       }
     }
   })
@@ -287,14 +359,40 @@ const handleBatchDelete = () => {
   }).catch(() => {})
 }
 
+const handleStockIn = () => {
+  if (!currentPurchaseId.value) return
+  ElMessageBox.confirm('确定将当前采购订单的全部明细入库吗？入库后会增加库存并标记订单为已入库。', '入库确认', {
+    confirmButtonText: '确定入库',
+    cancelButtonText: '取消',
+    type: 'warning'
+  }).then(async () => {
+    stockInLoading.value = true
+    try {
+      const res = await stockInPurchaseItems(currentPurchaseId.value)
+      if (res.code === 200) {
+        ElMessage.success('入库成功')
+        await fetchPurchaseOrder()
+      } else {
+        ElMessage.error(res.message || '入库失败')
+      }
+    } catch (error) {
+      ElMessage.error(error?.response?.data?.message || '入库失败')
+    } finally {
+      stockInLoading.value = false
+    }
+  }).catch(() => {})
+}
+
 const handleBack = () => {
   router.push('/purchase-order')
 }
 
 onMounted(() => {
+  fetchOptions()
   if (route.query.purchase_id) {
     currentPurchaseId.value = parseInt(route.query.purchase_id)
   }
+  fetchPurchaseOrder()
   fetchData()
 })
 </script>
@@ -307,6 +405,12 @@ onMounted(() => {
 .card-header {
   display: flex;
   justify-content: space-between;
+  align-items: center;
+}
+
+.header-tags {
+  display: flex;
+  gap: 8px;
   align-items: center;
 }
 

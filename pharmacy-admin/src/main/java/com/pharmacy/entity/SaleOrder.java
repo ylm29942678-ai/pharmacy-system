@@ -14,8 +14,14 @@ public class SaleOrder {
     @TableField("cust_id")
     private Integer custId;
 
+    @TableField(exist = false)
+    private String custName;
+
     @TableField("user_id")
     private Integer userId;
+
+    @TableField(exist = false)
+    private String userRealName;
 
     @TableField("create_time")
     private LocalDateTime createTime;

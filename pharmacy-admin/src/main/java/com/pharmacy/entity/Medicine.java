@@ -17,6 +17,9 @@ public class Medicine {
     @TableField("med_alias")
     private String medAlias;
 
+    @TableField(exist = false)
+    private String supplierName;
+
     @TableField("med_type")
     private String medType;
 
@@ -48,7 +51,6 @@ public class Medicine {
     private Integer stockMin;
 
     @TableField("status")
-    @TableLogic
     private Integer status;
 
     @TableField("remark")

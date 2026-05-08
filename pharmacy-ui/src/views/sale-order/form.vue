@@ -113,11 +113,21 @@
         :rules="itemFormRules"
         label-width="100px"
       >
-        <el-form-item label="药品ID" prop="medId">
-          <el-input v-model="itemFormData.medId" placeholder="请输入药品ID" type="number" />
-        </el-form-item>
-        <el-form-item label="药品名称" prop="medicineName">
-          <el-input v-model="itemFormData.medicineName" placeholder="请输入药品名称" />
+        <el-form-item label="药品" prop="medId">
+          <el-select
+            v-model="itemFormData.medId"
+            placeholder="请选择药品"
+            filterable
+            style="width: 100%"
+            @change="handleMedicineChange"
+          >
+            <el-option
+              v-for="item in medicineList"
+              :key="item.medId"
+              :label="`${item.medName}（${item.spec || '无规格'}）`"
+              :value="item.medId"
+            />
+          </el-select>
         </el-form-item>
         <el-form-item label="批号" prop="batchNo">
           <el-input v-model="itemFormData.batchNo" placeholder="请输入批号（选填）" />
@@ -146,6 +156,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { createSaleOrder } from '@/api/sale-order'
 import { getCustomerList } from '@/api/customer'
+import { getMedicineList } from '@/api/medicine'
 
 const router = useRouter()
 const route = useRoute()
@@ -155,6 +166,7 @@ const itemFormRef = ref(null)
 const submitLoading = ref(false)
 const itemDialogVisible = ref(false)
 const customerList = ref([])
+const medicineList = ref([])
 
 const isEdit = computed(() => !!route.query.id)
 
@@ -182,8 +194,7 @@ const formRules = {
 }
 
 const itemFormRules = {
-  medId: [{ required: true, message: '请输入药品ID', trigger: 'blur' }],
-  medicineName: [{ required: true, message: '请输入药品名称', trigger: 'blur' }],
+  medId: [{ required: true, message: '请选择药品', trigger: 'change' }],
   quantity: [{ required: true, message: '请输入数量', trigger: 'blur' }],
   unitPrice: [{ required: true, message: '请输入单价', trigger: 'blur' }]
 }
@@ -203,8 +214,27 @@ const fetchCustomerList = async () => {
   }
 }
 
+const fetchMedicineList = async () => {
+  try {
+    const res = await getMedicineList({ current: 1, size: 1000, status: 1 })
+    if (res.code === 200) {
+      medicineList.value = res.data.records
+    }
+  } catch (error) {
+    ElMessage.error('获取药品列表失败')
+  }
+}
+
 const calculateItemTotal = () => {
   itemFormData.totalPrice = (itemFormData.quantity * itemFormData.unitPrice)
+}
+
+const handleMedicineChange = (medId) => {
+  const medicine = medicineList.value.find(item => item.medId === medId)
+  if (!medicine) return
+  itemFormData.medicineName = medicine.medName
+  itemFormData.unitPrice = Number(medicine.retailPrice || 0)
+  calculateItemTotal()
 }
 
 const showItemDialog = () => {
@@ -253,9 +283,11 @@ const handleSubmit = async () => {
         if (res.code === 200) {
           ElMessage.success('保存成功')
           router.push('/sale-order')
+        } else {
+          ElMessage.error(res.message || '保存失败')
         }
       } catch (error) {
-        ElMessage.error('保存失败')
+        ElMessage.error(error?.response?.data?.message || '保存失败')
       } finally {
         submitLoading.value = false
       }
@@ -269,6 +301,7 @@ const goBack = () => {
 
 onMounted(() => {
   fetchCustomerList()
+  fetchMedicineList()
 })
 </script>
 
