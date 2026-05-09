@@ -1,28 +1,33 @@
 <template>
-  <div class="page" v-if="medicine">
+  <div class="page">
     <el-breadcrumb separator="/">
       <el-breadcrumb-item :to="{ path: '/' }">首页</el-breadcrumb-item>
       <el-breadcrumb-item :to="{ path: '/medicines' }">药品查询</el-breadcrumb-item>
-      <el-breadcrumb-item>{{ medicine.name }}</el-breadcrumb-item>
+      <el-breadcrumb-item>{{ medicine?.name || '药品详情' }}</el-breadcrumb-item>
     </el-breadcrumb>
 
-    <section class="section grid-2">
+    <section v-if="medicine" v-loading="loading" class="section grid-2">
       <div class="panel detail-main">
         <div class="title-line">
-          <h1>{{ medicine.name }}</h1>
-          <el-tag :type="medicine.prescription ? 'warning' : 'success'" size="large">
-            {{ medicine.prescription ? '处方药' : '非处方药' }}
+          <div>
+            <h1>{{ medicine.name }}</h1>
+            <p v-if="medicine.alias" class="muted">别名：{{ medicine.alias }}</p>
+          </div>
+          <el-tag :type="medicine.isRx === 1 ? 'warning' : 'success'" size="large">
+            {{ medicine.isRx === 1 ? '处方药' : '非处方药' }}
           </el-tag>
         </div>
-        <p class="muted">{{ medicine.usage }}</p>
         <el-descriptions :column="1" border>
-          <el-descriptions-item label="规格">{{ medicine.spec }}</el-descriptions-item>
-          <el-descriptions-item label="剂型">{{ medicine.dosage }}</el-descriptions-item>
-          <el-descriptions-item label="零售价">¥{{ medicine.price.toFixed(2) }}</el-descriptions-item>
-          <el-descriptions-item label="生产厂家">{{ medicine.manufacturer }}</el-descriptions-item>
+          <el-descriptions-item label="药品类型">{{ medicine.type || '暂无' }}</el-descriptions-item>
+          <el-descriptions-item label="规格">{{ medicine.spec || '暂无' }}</el-descriptions-item>
+          <el-descriptions-item label="单位">{{ medicine.unit || '暂无' }}</el-descriptions-item>
+          <el-descriptions-item label="剂型">{{ medicine.dosageForm || '暂无' }}</el-descriptions-item>
+          <el-descriptions-item label="零售价">¥{{ formatPrice(medicine.retailPrice) }}</el-descriptions-item>
+          <el-descriptions-item label="生产厂家">{{ medicine.manufacturer || '暂无' }}</el-descriptions-item>
+          <el-descriptions-item label="批准文号">{{ medicine.approvalNo || '暂无' }}</el-descriptions-item>
           <el-descriptions-item label="库存状态">
-            <el-tag :type="medicine.stockStatus === '有货' ? 'success' : 'warning'">
-              {{ medicine.stockStatus }}，约 {{ medicine.stockCount }} 件
+            <el-tag :type="stockTagType(medicine.stockStatus)">
+              {{ medicine.stockStatus }}，约 {{ medicine.stockCount ?? 0 }} {{ medicine.unit || '件' }}
             </el-tag>
           </el-descriptions-item>
         </el-descriptions>
@@ -43,26 +48,56 @@
         </div>
       </aside>
     </section>
+
+    <el-empty v-else v-loading="loading" description="未找到该药品">
+      <el-button type="primary" @click="$router.push('/medicines')">返回药品查询</el-button>
+    </el-empty>
   </div>
-  <el-empty v-else description="未找到该药品">
-    <el-button type="primary" @click="$router.push('/medicines')">返回药品查询</el-button>
-  </el-empty>
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
+import { ElMessage } from 'element-plus'
 import { Back, ChatDotRound } from '@element-plus/icons-vue'
-import { medicines, storeInfo } from '@/data/mock'
+import { getClientMedicineDetail } from '@/api/client-medicine'
+import { storeInfo } from '@/data/mock'
 
 const route = useRoute()
-const medicine = computed(() => medicines.find((item) => item.id === Number(route.params.id)))
+const loading = ref(false)
+const medicine = ref(null)
+
+const loadMedicine = async () => {
+  loading.value = true
+  try {
+    const { data } = await getClientMedicineDetail(route.params.id)
+    if (data.code !== 200) {
+      throw new Error(data.message || '药品详情加载失败')
+    }
+    medicine.value = data.data
+  } catch (error) {
+    ElMessage.error('药品详情加载失败，请稍后重试')
+    medicine.value = null
+  } finally {
+    loading.value = false
+  }
+}
+
+const stockTagType = (status) => {
+  if (status === '有货') return 'success'
+  if (status === '库存较少') return 'warning'
+  return 'danger'
+}
+
+const formatPrice = (price) => Number(price || 0).toFixed(2)
+
+onMounted(loadMedicine)
 </script>
 
 <style scoped>
 .title-line {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
 }
@@ -70,6 +105,10 @@ const medicine = computed(() => medicines.find((item) => item.id === Number(rout
 .title-line h1 {
   margin: 0;
   font-size: 30px;
+}
+
+.title-line p {
+  margin: 8px 0 0;
 }
 
 .detail-main {

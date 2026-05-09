@@ -3,6 +3,7 @@ package com.pharmacy.mapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.pharmacy.entity.Medicine;
+import com.pharmacy.vo.ClientMedicineVO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
@@ -82,4 +83,100 @@ public interface MedicineMapper extends BaseMapper<Medicine> {
             </script>
             """)
     int updateMedicineById(@Param("medicine") Medicine medicine);
+
+    @Select("""
+            <script>
+            SELECT m.med_id AS id,
+                   m.med_name AS name,
+                   m.med_alias AS alias,
+                   m.med_type AS type,
+                   m.spec AS spec,
+                   m.unit AS unit,
+                   m.dosage_form AS dosage_form,
+                   m.manufacturer AS manufacturer,
+                   m.approval_no AS approval_no,
+                   m.retail_price AS retail_price,
+                   m.is_rx AS is_rx,
+                   COALESCE(sa.stock_count, 0) AS stock_count,
+                   CASE
+                       WHEN COALESCE(sa.stock_count, 0) &lt;= 0 THEN '无货'
+                       WHEN COALESCE(sa.stock_count, 0) &lt;= COALESCE(m.stock_min, 0) THEN '库存较少'
+                       ELSE '有货'
+                   END AS stock_status
+            FROM medicine m
+            LEFT JOIN (
+                SELECT med_id, SUM(stock_num) AS stock_count
+                FROM stock
+                WHERE status = 1
+                GROUP BY med_id
+            ) sa ON sa.med_id = m.med_id
+            <where>
+                m.status = 1
+                <if test="keyword != null and keyword != ''">
+                    AND (m.med_name LIKE CONCAT('%', #{keyword}, '%')
+                         OR m.med_alias LIKE CONCAT('%', #{keyword}, '%'))
+                </if>
+                <if test="type != null and type != ''">
+                    AND m.med_type = #{type}
+                </if>
+                <if test="dosageForm != null and dosageForm != ''">
+                    AND m.dosage_form = #{dosageForm}
+                </if>
+                <if test="isRx != null">
+                    AND m.is_rx = #{isRx}
+                </if>
+                <if test="stockStatus != null and stockStatus != ''">
+                    <choose>
+                        <when test="stockStatus == '有货'">
+                            AND COALESCE(sa.stock_count, 0) &gt; COALESCE(m.stock_min, 0)
+                        </when>
+                        <when test="stockStatus == '库存较少'">
+                            AND COALESCE(sa.stock_count, 0) &gt; 0
+                            AND COALESCE(sa.stock_count, 0) &lt;= COALESCE(m.stock_min, 0)
+                        </when>
+                        <when test="stockStatus == '无货'">
+                            AND COALESCE(sa.stock_count, 0) &lt;= 0
+                        </when>
+                    </choose>
+                </if>
+            </where>
+            ORDER BY m.med_id ASC
+            </script>
+            """)
+    Page<ClientMedicineVO> selectClientMedicinePage(Page<ClientMedicineVO> page,
+                                                    @Param("keyword") String keyword,
+                                                    @Param("type") String type,
+                                                    @Param("dosageForm") String dosageForm,
+                                                    @Param("isRx") Integer isRx,
+                                                    @Param("stockStatus") String stockStatus);
+
+    @Select("""
+            SELECT m.med_id AS id,
+                   m.med_name AS name,
+                   m.med_alias AS alias,
+                   m.med_type AS type,
+                   m.spec AS spec,
+                   m.unit AS unit,
+                   m.dosage_form AS dosage_form,
+                   m.manufacturer AS manufacturer,
+                   m.approval_no AS approval_no,
+                   m.retail_price AS retail_price,
+                   m.is_rx AS is_rx,
+                   COALESCE(sa.stock_count, 0) AS stock_count,
+                   CASE
+                       WHEN COALESCE(sa.stock_count, 0) <= 0 THEN '无货'
+                       WHEN COALESCE(sa.stock_count, 0) <= COALESCE(m.stock_min, 0) THEN '库存较少'
+                       ELSE '有货'
+                   END AS stock_status
+            FROM medicine m
+            LEFT JOIN (
+                SELECT med_id, SUM(stock_num) AS stock_count
+                FROM stock
+                WHERE status = 1
+                GROUP BY med_id
+            ) sa ON sa.med_id = m.med_id
+            WHERE m.status = 1
+              AND m.med_id = #{id}
+            """)
+    ClientMedicineVO selectClientMedicineById(@Param("id") Integer id);
 }
