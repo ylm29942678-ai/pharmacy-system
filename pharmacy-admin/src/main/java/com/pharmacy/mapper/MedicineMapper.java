@@ -88,8 +88,8 @@ public interface MedicineMapper extends BaseMapper<Medicine> {
             <script>
             SELECT m.med_id AS id,
                    m.med_name AS name,
-                   m.med_alias AS alias,
-                   m.med_type AS type,
+                   m.med_alias AS med_alias,
+                   m.med_type AS med_type,
                    m.spec AS spec,
                    m.unit AS unit,
                    m.dosage_form AS dosage_form,
@@ -153,8 +153,8 @@ public interface MedicineMapper extends BaseMapper<Medicine> {
     @Select("""
             SELECT m.med_id AS id,
                    m.med_name AS name,
-                   m.med_alias AS alias,
-                   m.med_type AS type,
+                   m.med_alias AS med_alias,
+                   m.med_type AS med_type,
                    m.spec AS spec,
                    m.unit AS unit,
                    m.dosage_form AS dosage_form,

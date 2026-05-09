@@ -52,8 +52,8 @@
 
 - `id`
 - `name`
-- `alias`
-- `type`
+- `medAlias`
+- `medType`
 - `spec`
 - `unit`
 - `dosageForm`

@@ -51,6 +51,7 @@
       <article v-for="item in medicines" :key="item.id" class="medicine-card">
         <h3>{{ item.name }}</h3>
         <div class="medicine-meta">
+          <el-tag>{{ item.medType || '暂无类型' }}</el-tag>
           <el-tag>{{ item.spec || '暂无规格' }}</el-tag>
           <el-tag type="info">{{ item.dosageForm || '暂无剂型' }}</el-tag>
           <el-tag :type="item.isRx === 1 ? 'warning' : 'success'">

@@ -11,14 +11,14 @@
         <div class="title-line">
           <div>
             <h1>{{ medicine.name }}</h1>
-            <p v-if="medicine.alias" class="muted">别名：{{ medicine.alias }}</p>
+            <p v-if="medicine.medAlias" class="muted">别名：{{ medicine.medAlias }}</p>
           </div>
           <el-tag :type="medicine.isRx === 1 ? 'warning' : 'success'" size="large">
             {{ medicine.isRx === 1 ? '处方药' : '非处方药' }}
           </el-tag>
         </div>
         <el-descriptions :column="1" border>
-          <el-descriptions-item label="药品类型">{{ medicine.type || '暂无' }}</el-descriptions-item>
+          <el-descriptions-item label="药品类型">{{ medicine.medType || '暂无' }}</el-descriptions-item>
           <el-descriptions-item label="规格">{{ medicine.spec || '暂无' }}</el-descriptions-item>
           <el-descriptions-item label="单位">{{ medicine.unit || '暂无' }}</el-descriptions-item>
           <el-descriptions-item label="剂型">{{ medicine.dosageForm || '暂无' }}</el-descriptions-item>

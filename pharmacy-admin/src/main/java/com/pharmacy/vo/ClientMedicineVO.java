@@ -8,8 +8,8 @@ import java.math.BigDecimal;
 public class ClientMedicineVO {
     private Integer id;
     private String name;
-    private String alias;
-    private String type;
+    private String medAlias;
+    private String medType;
     private String spec;
     private String unit;
     private String dosageForm;
