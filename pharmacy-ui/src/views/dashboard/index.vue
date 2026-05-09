@@ -162,45 +162,26 @@
       <el-card class="dashboard-card">
         <template #header>
           <div class="card-header">
-            <span>销售趋势</span>
-            <el-button text>近7天</el-button>
+            <span>过期药品处理提醒</span>
+            <el-button text type="primary" @click="$router.push('/stock')">查看库存</el-button>
           </div>
         </template>
-        <div class="trend-chart">
-          <svg viewBox="0 0 520 260" role="img" aria-label="销售趋势">
-            <g class="grid-lines">
-              <line x1="36" y1="40" x2="500" y2="40" />
-              <line x1="36" y1="90" x2="500" y2="90" />
-              <line x1="36" y1="140" x2="500" y2="140" />
-              <line x1="36" y1="190" x2="500" y2="190" />
-              <line x1="36" y1="230" x2="500" y2="230" />
-            </g>
-            <polyline class="trend-area" points="36,205 112,182 188,145 264,80 340,162 416,148 492,186 492,230 36,230" />
-            <polyline class="trend-line" points="36,205 112,182 188,145 264,80 340,162 416,148 492,186" />
-            <g class="trend-dots">
-              <circle cx="36" cy="205" r="4" />
-              <circle cx="112" cy="182" r="4" />
-              <circle cx="188" cy="145" r="4" />
-              <circle cx="264" cy="80" r="4" />
-              <circle cx="340" cy="162" r="4" />
-              <circle cx="416" cy="148" r="4" />
-              <circle cx="492" cy="186" r="4" />
-            </g>
-            <g class="chart-labels">
-              <text x="30" y="252">05-02</text>
-              <text x="106" y="252">05-03</text>
-              <text x="182" y="252">05-04</text>
-              <text x="258" y="252">05-05</text>
-              <text x="334" y="252">05-06</text>
-              <text x="410" y="252">05-07</text>
-              <text x="486" y="252">05-08</text>
-            </g>
-          </svg>
-          <div class="chart-legend">
-            <span></span>
-            营业额（元）
-          </div>
-        </div>
+        <el-table :data="expiredStocks" class="soft-table" stripe style="width: 100%;" empty-text="暂无过期药品">
+          <el-table-column prop="medName" label="药品名称" min-width="130" />
+          <el-table-column prop="supplierName" label="供应商" min-width="110">
+            <template #default="{ row }">
+              {{ row.supplierName || '-' }}
+            </template>
+          </el-table-column>
+          <el-table-column prop="batchNo" label="批号" width="110" />
+          <el-table-column prop="expireDate" label="有效期" width="110" />
+          <el-table-column prop="stockNum" label="库存" width="80" />
+          <el-table-column label="处理" width="100">
+            <template #default>
+              <el-tag type="danger" effect="dark">待处理</el-tag>
+            </template>
+          </el-table-column>
+        </el-table>
       </el-card>
     </div>
   </div>
@@ -213,11 +194,11 @@ import {
   ArrowRight, Money, Document, Goods, Warning, ShoppingCart,
   Plus, User, Tickets, DocumentCopy 
 } from '@element-plus/icons-vue'
-import { getStatistics, getRecentOrders, getRecentLogs } from '@/api/dashboard'
+import { getStatistics, getRecentOrders, getExpiredStocks } from '@/api/dashboard'
 
 const statistics = ref({})
 const recentOrders = ref([])
-const recentLogs = ref([])
+const expiredStocks = ref([])
 
 const fetchStatistics = async () => {
   try {
@@ -245,16 +226,16 @@ const fetchRecentOrders = async () => {
   }
 }
 
-const fetchRecentLogs = async () => {
+const fetchExpiredStocks = async () => {
   try {
-    const res = await getRecentLogs()
+    const res = await getExpiredStocks()
     if (res.code === 200) {
-      recentLogs.value = res.data
+      expiredStocks.value = res.data
     } else {
-      ElMessage.error(res.message || '获取日志失败')
+      ElMessage.error(res.message || '获取过期药品失败')
     }
   } catch (error) {
-    ElMessage.error('获取日志失败')
+    ElMessage.error('获取过期药品失败')
   }
 }
 
@@ -277,7 +258,7 @@ const handleSupplierCheck = () => {
 onMounted(() => {
   fetchStatistics()
   fetchRecentOrders()
-  fetchRecentLogs()
+  fetchExpiredStocks()
 })
 </script>
 
@@ -520,58 +501,6 @@ onMounted(() => {
 
 .todo-arrow {
   color: var(--app-text-muted);
-}
-
-.trend-chart {
-  min-height: 290px;
-}
-
-.trend-chart svg {
-  width: 100%;
-  height: 260px;
-}
-
-.grid-lines line {
-  stroke: var(--app-border);
-  stroke-dasharray: 4 5;
-}
-
-.trend-area {
-  fill: rgba(15, 98, 254, 0.08);
-  stroke: none;
-}
-
-.trend-line {
-  fill: none;
-  stroke: #0f62fe;
-  stroke-width: 2.5;
-}
-
-.trend-dots circle {
-  fill: #0f62fe;
-  stroke: var(--app-surface);
-  stroke-width: 2;
-}
-
-.chart-labels text {
-  fill: var(--app-text-muted);
-  font-size: 12px;
-}
-
-.chart-legend {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  color: var(--app-text-muted);
-  font-size: 13px;
-}
-
-.chart-legend span {
-  width: 8px;
-  height: 8px;
-  background: #0f62fe;
-  border-radius: 2px;
 }
 
 @media (max-width: 1280px) {

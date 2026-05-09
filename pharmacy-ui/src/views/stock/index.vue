@@ -17,6 +17,11 @@
       >
         <el-table-column prop="stockId" label="库存ID" width="80" />
         <el-table-column prop="medName" label="药品名称" min-width="150" />
+        <el-table-column prop="supplierName" label="供应商" min-width="140">
+          <template #default="{ row }">
+            {{ row.supplierName || '-' }}
+          </template>
+        </el-table-column>
         <el-table-column prop="spec" label="规格" width="120" />
         <el-table-column prop="unit" label="单位" width="80" />
         <el-table-column prop="batchNo" label="批号" width="120" />
@@ -30,9 +35,10 @@
         <el-table-column prop="cabinet" label="存放位置" width="100" />
         <el-table-column label="状态" width="180">
           <template #default="{ row }">
-            <el-tag v-if="row.isNearExpire" type="danger" effect="dark">近效期</el-tag>
+            <el-tag v-if="row.isExpired" type="danger" effect="dark">已过期</el-tag>
+            <el-tag v-if="row.isNearExpire && !row.isExpired" type="danger" effect="dark">近效期</el-tag>
             <el-tag v-if="row.isLowStock" type="warning" effect="dark">库存不足</el-tag>
-            <el-tag v-if="!row.isNearExpire && !row.isLowStock" type="success">正常</el-tag>
+            <el-tag v-if="!row.isExpired && !row.isNearExpire && !row.isLowStock" type="success">正常</el-tag>
           </template>
         </el-table-column>
         <el-table-column prop="createTime" label="入库时间" width="180" />
@@ -67,7 +73,7 @@ const pagination = reactive({
 })
 
 const tableRowClassName = ({ row }) => {
-  if (row.isNearExpire || row.isLowStock) {
+  if (row.isExpired || row.isNearExpire || row.isLowStock) {
     return 'warning-row'
   }
   return ''

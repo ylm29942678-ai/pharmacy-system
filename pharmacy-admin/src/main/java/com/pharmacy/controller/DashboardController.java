@@ -3,7 +3,9 @@ package com.pharmacy.controller;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.pharmacy.common.Result;
 import com.pharmacy.entity.*;
+import com.pharmacy.mapper.StockMapper;
 import com.pharmacy.service.*;
+import com.pharmacy.vo.StockVO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -30,6 +32,9 @@ public class DashboardController {
     @Autowired
     private SysLogService sysLogService;
 
+    @Autowired
+    private StockMapper stockMapper;
+
     @GetMapping("/statistics")
     public Result<Map<String, Object>> getStatistics() {
         Map<String, Object> data = new HashMap<>();
@@ -55,15 +60,22 @@ public class DashboardController {
         long stockCount = stockService.count();
         data.put("stockCount", stockCount);
 
-        // 近效期预警数量（30天内）
+        // 过期数量和近效期预警数量（今天至未来30天）
         List<Stock> allStocks = stockService.list();
+        long expiredCount = 0;
         long nearExpireCount = 0;
         LocalDate warningDate = today.plusDays(30);
         for (Stock stock : allStocks) {
-            if (stock.getExpireDate() != null && !stock.getExpireDate().isAfter(warningDate)) {
+            if (stock.getExpireDate() == null) {
+                continue;
+            }
+            if (stock.getExpireDate().isBefore(today)) {
+                expiredCount++;
+            } else if (!stock.getExpireDate().isAfter(warningDate)) {
                 nearExpireCount++;
             }
         }
+        data.put("expiredCount", expiredCount);
         data.put("nearExpireCount", nearExpireCount);
 
         return Result.success(data);
@@ -76,6 +88,12 @@ public class DashboardController {
         wrapper.last("LIMIT 5");
         List<SaleOrder> orders = saleOrderService.list(wrapper);
         return Result.success(orders);
+    }
+
+    @GetMapping("/expired-stocks")
+    public Result<List<StockVO>> getExpiredStocks() {
+        List<StockVO> stocks = stockMapper.selectExpiredStockReminders(LocalDate.now());
+        return Result.success(stocks);
     }
 
     @GetMapping("/recent-logs")

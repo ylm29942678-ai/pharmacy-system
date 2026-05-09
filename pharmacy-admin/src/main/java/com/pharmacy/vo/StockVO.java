@@ -10,6 +10,7 @@ public class StockVO {
     private Integer stockId;
     private Integer medId;
     private String medName;
+    private String supplierName;
     private String spec;
     private String unit;
     private String batchNo;
@@ -24,6 +25,7 @@ public class StockVO {
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
     private Integer stockMin;
+    private Boolean isExpired;
     private Boolean isNearExpire;
     private Boolean isLowStock;
 }

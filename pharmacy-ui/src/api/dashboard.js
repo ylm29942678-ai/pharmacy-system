@@ -14,9 +14,9 @@ export function getRecentOrders() {
   })
 }
 
-export function getRecentLogs() {
+export function getExpiredStocks() {
   return request({
-    url: '/dashboard/recent-logs',
+    url: '/dashboard/expired-stocks',
     method: 'get'
   })
 }

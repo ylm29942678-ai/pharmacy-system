@@ -11,7 +11,7 @@
  Target Server Version : 80042 (8.0.42)
  File Encoding         : 65001
 
- Date: 13/04/2026 17:58:13
+ Date: 09/05/2026 14:20:15
 */
 
 SET NAMES utf8mb4;
@@ -35,14 +35,8 @@ CREATE TABLE `customer`  (
   `create_time` datetime NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time` datetime NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '最后更新时间',
   PRIMARY KEY (`cust_id`) USING BTREE,
-  INDEX `idx_phone`(`phone` ASC) USING BTREE COMMENT '手机号索引，用于查询'
-) ENGINE = InnoDB AUTO_INCREMENT = 3 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '顾客/会员信息表' ROW_FORMAT = Dynamic;
-
--- ----------------------------
--- Records of customer
--- ----------------------------
-INSERT INTO `customer` VALUES (1, '王大伯', '13566667777', 1, '金卡', 1200.50, '1965-05-12', NULL, 1, NULL, '2026-04-13 17:56:51', '2026-04-13 17:56:51');
-INSERT INTO `customer` VALUES (2, '刘女士', '13788889999', 1, '普通', 85.00, '1992-10-24', NULL, 1, NULL, '2026-04-13 17:56:51', '2026-04-13 17:56:51');
+  INDEX `idx_phone`(`phone` ASC) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 11 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '顾客/会员信息表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Table structure for medicine
@@ -67,14 +61,7 @@ CREATE TABLE `medicine`  (
   `create_time` datetime NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time` datetime NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`med_id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '药品基础信息表' ROW_FORMAT = Dynamic;
-
--- ----------------------------
--- Records of medicine
--- ----------------------------
-INSERT INTO `medicine` VALUES (1, '感冒灵颗粒', NULL, '西药', '10g*9袋', '盒', '颗粒', NULL, NULL, 15.50, 8.20, 0, 20, 1, NULL, '2026-04-13 17:56:51', '2026-04-13 17:56:51');
-INSERT INTO `medicine` VALUES (2, '安宫牛黄丸', NULL, '中药', '3g*1丸', '盒', '丸剂', NULL, NULL, 580.00, 420.00, 0, 5, 1, NULL, '2026-04-13 17:56:51', '2026-04-13 17:56:51');
-INSERT INTO `medicine` VALUES (3, '阿莫西林胶囊', NULL, '西药', '0.25g*24粒', '盒', '胶囊', NULL, NULL, 12.00, 5.50, 1, 50, 1, NULL, '2026-04-13 17:56:51', '2026-04-13 17:56:51');
+) ENGINE = InnoDB AUTO_INCREMENT = 11 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '药品基础信息表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for purchase_item
@@ -98,11 +85,7 @@ CREATE TABLE `purchase_item`  (
   INDEX `fk_purchase_item_med`(`med_id` ASC) USING BTREE,
   CONSTRAINT `fk_purchase_item_med` FOREIGN KEY (`med_id`) REFERENCES `medicine` (`med_id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `fk_purchase_item_order` FOREIGN KEY (`purchase_id`) REFERENCES `purchase_order` (`purchase_id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '采购明细表' ROW_FORMAT = Dynamic;
-
--- ----------------------------
--- Records of purchase_item
--- ----------------------------
+) ENGINE = InnoDB AUTO_INCREMENT = 12 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '采购明细表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for purchase_order
@@ -124,11 +107,7 @@ CREATE TABLE `purchase_order`  (
   INDEX `fk_purchase_user`(`user_id` ASC) USING BTREE,
   CONSTRAINT `fk_purchase_supplier` FOREIGN KEY (`supplier_id`) REFERENCES `supplier` (`supplier_id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `fk_purchase_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '采购订单主表' ROW_FORMAT = Dynamic;
-
--- ----------------------------
--- Records of purchase_order
--- ----------------------------
+) ENGINE = InnoDB AUTO_INCREMENT = 12 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '采购订单主表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for sale_item
@@ -148,19 +127,14 @@ CREATE TABLE `sale_item`  (
   INDEX `fk_item_medicine`(`med_id` ASC) USING BTREE,
   CONSTRAINT `fk_item_medicine` FOREIGN KEY (`med_id`) REFERENCES `medicine` (`med_id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `fk_item_order` FOREIGN KEY (`order_id`) REFERENCES `sale_order` (`order_id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '销售订单明细表' ROW_FORMAT = Dynamic;
-
--- ----------------------------
--- Records of sale_item
--- ----------------------------
-INSERT INTO `sale_item` VALUES (1, 202604130001, 1, '20250101A', 2, 15.50, 31.00, '2026-04-13 17:56:51');
+) ENGINE = InnoDB AUTO_INCREMENT = 16 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '销售订单明细表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for sale_order
 -- ----------------------------
 DROP TABLE IF EXISTS `sale_order`;
 CREATE TABLE `sale_order`  (
-  `order_id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键，订单号（支持时间戳生成）',
+  `order_id` bigint NOT NULL AUTO_INCREMENT,
   `cust_id` int NULL DEFAULT NULL COMMENT '关联顾客表customer.cust_id，顾客ID',
   `user_id` int NOT NULL COMMENT '关联用户表user.user_id，操作员/店员',
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '订单创建时间',
@@ -175,12 +149,7 @@ CREATE TABLE `sale_order`  (
   INDEX `fk_sale_user`(`user_id` ASC) USING BTREE,
   CONSTRAINT `fk_sale_customer` FOREIGN KEY (`cust_id`) REFERENCES `customer` (`cust_id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `fk_sale_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 202604130002 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '销售订单主表' ROW_FORMAT = Dynamic;
-
--- ----------------------------
--- Records of sale_order
--- ----------------------------
-INSERT INTO `sale_order` VALUES (202604130001, 1, 2, '2026-04-13 17:56:51', 31.00, '微信', 1, 1, NULL, '2026-04-13 17:56:51');
+) ENGINE = InnoDB AUTO_INCREMENT = 17 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '销售订单主表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for stock
@@ -196,6 +165,8 @@ CREATE TABLE `stock`  (
   `cabinet` varchar(30) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '药柜位置：中药柜/西药柜/针剂柜等',
   `production_date` date NULL DEFAULT NULL COMMENT '生产日期',
   `supplier_id` int NULL DEFAULT NULL COMMENT '关联供应商表，来源供应商',
+  `purchase_id` bigint NULL DEFAULT NULL COMMENT '来源采购订单ID',
+  `purchase_item_id` bigint NULL DEFAULT NULL COMMENT '来源采购明细ID',
   `status` tinyint NULL DEFAULT 1 COMMENT '1=正常, 0=已过期/禁用/清库',
   `remark` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '备注',
   `create_time` datetime NULL DEFAULT CURRENT_TIMESTAMP COMMENT '入库时间',
@@ -203,16 +174,13 @@ CREATE TABLE `stock`  (
   PRIMARY KEY (`stock_id`) USING BTREE,
   INDEX `fk_stock_medicine`(`med_id` ASC) USING BTREE,
   INDEX `fk_stock_supplier`(`supplier_id` ASC) USING BTREE,
+  INDEX `idx_stock_purchase_id`(`purchase_id` ASC) USING BTREE,
+  INDEX `idx_stock_purchase_item_id`(`purchase_item_id` ASC) USING BTREE,
   CONSTRAINT `fk_stock_medicine` FOREIGN KEY (`med_id`) REFERENCES `medicine` (`med_id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
+  CONSTRAINT `fk_stock_purchase_item` FOREIGN KEY (`purchase_item_id`) REFERENCES `purchase_item` (`item_id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
+  CONSTRAINT `fk_stock_purchase_order` FOREIGN KEY (`purchase_id`) REFERENCES `purchase_order` (`purchase_id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `fk_stock_supplier` FOREIGN KEY (`supplier_id`) REFERENCES `supplier` (`supplier_id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '库存表（按批号管理）' ROW_FORMAT = Dynamic;
-
--- ----------------------------
--- Records of stock
--- ----------------------------
-INSERT INTO `stock` VALUES (1, 1, '20250101A', '2027-01-01', 100, 8.20, '西药柜', NULL, 1, 1, NULL, '2026-04-13 17:56:51', '2026-04-13 17:56:51');
-INSERT INTO `stock` VALUES (2, 2, '20231205B', '2026-05-20', 10, 420.00, '中药柜', NULL, 2, 1, NULL, '2026-04-13 17:56:51', '2026-04-13 17:56:51');
-INSERT INTO `stock` VALUES (3, 3, '20240815C', '2026-08-15', 5, 5.50, '西药柜', NULL, 1, 1, NULL, '2026-04-13 17:56:51', '2026-04-13 17:56:51');
+) ENGINE = InnoDB AUTO_INCREMENT = 12 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '库存表（按批号管理）' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for stock_check
@@ -238,11 +206,7 @@ CREATE TABLE `stock_check`  (
   INDEX `fk_check_user`(`check_user` ASC) USING BTREE,
   CONSTRAINT `fk_check_medicine` FOREIGN KEY (`med_id`) REFERENCES `medicine` (`med_id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `fk_check_user` FOREIGN KEY (`check_user`) REFERENCES `user` (`user_id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '库存盘点表' ROW_FORMAT = Dynamic;
-
--- ----------------------------
--- Records of stock_check
--- ----------------------------
+) ENGINE = InnoDB AUTO_INCREMENT = 12 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '库存盘点表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for supplier
@@ -264,13 +228,7 @@ CREATE TABLE `supplier`  (
   `create_time` datetime NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time` datetime NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`supplier_id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 3 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '供应商信息表' ROW_FORMAT = Dynamic;
-
--- ----------------------------
--- Records of supplier
--- ----------------------------
-INSERT INTO `supplier` VALUES (1, '某某省医药集团有限公司', '省医药', '王经理', '13800138000', NULL, NULL, NULL, '综合', NULL, 1, NULL, '2026-04-13 17:56:51', '2026-04-13 17:56:51');
-INSERT INTO `supplier` VALUES (2, '大药王中药材批发中心', '大药王', '赵老师', '13911112222', NULL, NULL, NULL, '中药', NULL, 1, NULL, '2026-04-13 17:56:51', '2026-04-13 17:56:51');
+) ENGINE = InnoDB AUTO_INCREMENT = 11 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '供应商信息表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for sys_log
@@ -290,13 +248,7 @@ CREATE TABLE `sys_log`  (
   PRIMARY KEY (`log_id`) USING BTREE,
   INDEX `fk_log_user`(`user_id` ASC) USING BTREE,
   CONSTRAINT `fk_log_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 3 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '系统操作日志表' ROW_FORMAT = Dynamic;
-
--- ----------------------------
--- Records of sys_log
--- ----------------------------
-INSERT INTO `sys_log` VALUES (1, 1, 'admin01', '张店长', '系统登录', '登录', '管理员登录后台系统', '127.0.0.1', '2026-04-13 17:56:51', NULL);
-INSERT INTO `sys_log` VALUES (2, 2, 'staff01', '李小美', '销售管理', '新增', '新增销售单：202604130001', '192.168.1.15', '2026-04-13 17:56:51', NULL);
+) ENGINE = InnoDB AUTO_INCREMENT = 12 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '系统操作日志表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for user
@@ -315,12 +267,6 @@ CREATE TABLE `user`  (
   `update_time` datetime NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '最后更新时间',
   PRIMARY KEY (`user_id`) USING BTREE,
   UNIQUE INDEX `uk_username`(`username` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 3 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '用户/操作员表' ROW_FORMAT = Dynamic;
-
--- ----------------------------
--- Records of user
--- ----------------------------
-INSERT INTO `user` VALUES (1, 'admin01', 'e10adc3949ba59abbe56e057f20f883e', '张店长', 'admin', NULL, 1, NULL, '2026-04-13 17:56:51', '2026-04-13 17:56:51');
-INSERT INTO `user` VALUES (2, 'staff01', 'e10adc3949ba59abbe56e057f20f883e', '李小美', 'staff', NULL, 1, NULL, '2026-04-13 17:56:51', '2026-04-13 17:56:51');
+) ENGINE = InnoDB AUTO_INCREMENT = 13 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '用户/操作员表' ROW_FORMAT = Dynamic;
 
 SET FOREIGN_KEY_CHECKS = 1;
