@@ -6,7 +6,7 @@
           <el-icon><FirstAidKit /></el-icon>
           <span>安心乡镇药房</span>
         </RouterLink>
-        <nav class="main-nav">
+        <nav class="main-nav" aria-label="用户端导航">
           <RouterLink v-for="item in navItems" :key="item.path" :to="item.path">
             {{ item.label }}
           </RouterLink>
@@ -20,6 +20,8 @@
 </template>
 
 <script setup>
+import { FirstAidKit } from '@element-plus/icons-vue'
+
 const navItems = [
   { label: '首页', path: '/' },
   { label: '药品查询', path: '/medicines' },

@@ -43,7 +43,7 @@
         </div>
         <p class="notice">用药请遵医嘱或在药师指导下购买，处方药需凭处方购买。</p>
         <div class="detail-actions">
-          <el-button type="primary" :icon="ChatDotRound" @click="$router.push('/chat')">咨询此药</el-button>
+          <el-button type="primary" :icon="Phone" @click="$router.push('/store')">查看药店电话</el-button>
           <el-button :icon="Back" @click="$router.push('/medicines')">返回查询</el-button>
         </div>
       </aside>
@@ -59,7 +59,7 @@
 import { onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Back, ChatDotRound } from '@element-plus/icons-vue'
+import { Back, Phone } from '@element-plus/icons-vue'
 import { getClientMedicineDetail } from '@/api/client-medicine'
 import { storeInfo } from '@/data/mock'
 
