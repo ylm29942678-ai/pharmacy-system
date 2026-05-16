@@ -9,6 +9,7 @@
 
       <div class="table-toolbar">
         <el-button type="primary" @click="handleAdd">新增</el-button>
+        <el-button type="success" @click="handleExport">导出Excel</el-button>
         <el-button type="danger" :disabled="multipleSelection.length === 0" @click="handleBatchDelete">批量删除</el-button>
       </div>
 
@@ -38,6 +39,7 @@
         <el-table-column prop="remark" label="备注" min-width="150" />
         <el-table-column label="操作" width="280" fixed="right">
           <template #default="{ row }">
+            <el-button type="success" size="small" :disabled="row.payStatus === 1" @click="handleOutbound(row)">出库</el-button>
             <el-button type="primary" size="small" @click="handleViewDetail(row)">查看明细</el-button>
             <el-button type="warning" size="small" @click="handleEdit(row)">编辑</el-button>
             <el-button type="danger" size="small" @click="handleDelete(row)">删除</el-button>
@@ -137,9 +139,10 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getSaleOrderList, addSaleOrder, updateSaleOrder, deleteSaleOrder, batchDeleteSaleOrder } from '@/api/sale-order'
+import { getSaleOrderList, addSaleOrder, updateSaleOrder, deleteSaleOrder, batchDeleteSaleOrder, outboundSaleOrder, exportSaleOrder } from '@/api/sale-order'
 import { getCustomerList } from '@/api/customer'
 import { getUserList } from '@/api/user'
+import { downloadBlob } from '@/utils/download'
 
 const router = useRouter()
 const loading = ref(false)
@@ -256,6 +259,35 @@ const handleDelete = (row) => {
       ElMessage.error('删除失败')
     }
   }).catch(() => {})
+}
+
+const handleOutbound = (row) => {
+  ElMessageBox.confirm('确认将该销售单出库吗？系统会校验库存并自动扣减，且不能重复出库。', '提示', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning'
+  }).then(async () => {
+    try {
+      const res = await outboundSaleOrder(row.orderId)
+      if (res.code === 200) {
+        ElMessage.success('出库成功')
+        fetchData()
+      } else {
+        ElMessage.error(res.message || '出库失败')
+      }
+    } catch (error) {
+      ElMessage.error(error?.response?.data?.message || '出库失败')
+    }
+  }).catch(() => {})
+}
+
+const handleExport = async () => {
+  try {
+    const blob = await exportSaleOrder()
+    downloadBlob(blob, '销售订单数据.xlsx')
+  } catch (error) {
+    ElMessage.error('导出失败')
+  }
 }
 
 const handleBatchDelete = () => {

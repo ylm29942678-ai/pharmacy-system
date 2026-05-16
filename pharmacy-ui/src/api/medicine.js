@@ -37,3 +37,30 @@ export function deleteMedicine(id) {
     method: 'delete'
   })
 }
+
+export function exportMedicine(params) {
+  return request({
+    url: '/medicine/export',
+    method: 'get',
+    params,
+    responseType: 'blob'
+  })
+}
+
+export function downloadMedicineTemplate() {
+  return request({
+    url: '/medicine/import-template',
+    method: 'get',
+    responseType: 'blob'
+  })
+}
+
+export function importMedicine(file) {
+  const data = new FormData()
+  data.append('file', file)
+  return request({
+    url: '/medicine/import',
+    method: 'post',
+    data
+  })
+}

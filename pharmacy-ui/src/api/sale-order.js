@@ -53,3 +53,18 @@ export const createSaleOrder = (data) => {
     data
   })
 }
+
+export const outboundSaleOrder = (id) => {
+  return request({
+    url: `/sale-order/${id}/outbound`,
+    method: 'post'
+  })
+}
+
+export const exportSaleOrder = () => {
+  return request({
+    url: '/sale-order/export',
+    method: 'get',
+    responseType: 'blob'
+  })
+}

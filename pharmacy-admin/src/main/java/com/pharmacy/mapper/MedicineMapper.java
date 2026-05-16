@@ -74,7 +74,6 @@ public interface MedicineMapper extends BaseMapper<Medicine> {
                 <if test="medicine.retailPrice != null">retail_price = #{medicine.retailPrice},</if>
                 <if test="medicine.purchasePrice != null">purchase_price = #{medicine.purchasePrice},</if>
                 <if test="medicine.isRx != null">is_rx = #{medicine.isRx},</if>
-                <if test="medicine.stockMin != null">stock_min = #{medicine.stockMin},</if>
                 <if test="medicine.status != null">status = #{medicine.status},</if>
                 <if test="medicine.remark != null">remark = #{medicine.remark},</if>
                 update_time = NOW()
@@ -100,12 +99,12 @@ public interface MedicineMapper extends BaseMapper<Medicine> {
                    COALESCE(sa.stock_count, 0) AS stock_count,
                    CASE
                        WHEN COALESCE(sa.stock_count, 0) &lt;= 0 THEN '无货'
-                       WHEN COALESCE(sa.stock_count, 0) &lt;= COALESCE(m.stock_min, 0) THEN '库存较少'
+                       WHEN COALESCE(sa.stock_count, 0) &lt;= COALESCE(sa.stock_min, 0) THEN '库存较少'
                        ELSE '有货'
                    END AS stock_status
             FROM medicine m
             LEFT JOIN (
-                SELECT med_id, SUM(stock_num) AS stock_count
+                SELECT med_id, SUM(stock_num) AS stock_count, MAX(stock_min) AS stock_min
                 FROM stock
                 WHERE status = 1
                 GROUP BY med_id
@@ -128,11 +127,11 @@ public interface MedicineMapper extends BaseMapper<Medicine> {
                 <if test="stockStatus != null and stockStatus != ''">
                     <choose>
                         <when test="stockStatus == '有货'">
-                            AND COALESCE(sa.stock_count, 0) &gt; COALESCE(m.stock_min, 0)
+                            AND COALESCE(sa.stock_count, 0) &gt; COALESCE(sa.stock_min, 0)
                         </when>
                         <when test="stockStatus == '库存较少'">
                             AND COALESCE(sa.stock_count, 0) &gt; 0
-                            AND COALESCE(sa.stock_count, 0) &lt;= COALESCE(m.stock_min, 0)
+                            AND COALESCE(sa.stock_count, 0) &lt;= COALESCE(sa.stock_min, 0)
                         </when>
                         <when test="stockStatus == '无货'">
                             AND COALESCE(sa.stock_count, 0) &lt;= 0
@@ -165,12 +164,12 @@ public interface MedicineMapper extends BaseMapper<Medicine> {
                    COALESCE(sa.stock_count, 0) AS stock_count,
                    CASE
                        WHEN COALESCE(sa.stock_count, 0) <= 0 THEN '无货'
-                       WHEN COALESCE(sa.stock_count, 0) <= COALESCE(m.stock_min, 0) THEN '库存较少'
+                       WHEN COALESCE(sa.stock_count, 0) <= COALESCE(sa.stock_min, 0) THEN '库存较少'
                        ELSE '有货'
                    END AS stock_status
             FROM medicine m
             LEFT JOIN (
-                SELECT med_id, SUM(stock_num) AS stock_count
+                SELECT med_id, SUM(stock_num) AS stock_count, MAX(stock_min) AS stock_min
                 FROM stock
                 WHERE status = 1
                 GROUP BY med_id

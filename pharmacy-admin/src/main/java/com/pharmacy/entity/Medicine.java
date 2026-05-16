@@ -47,9 +47,6 @@ public class Medicine {
     @TableField("is_rx")
     private Integer isRx;
 
-    @TableField("stock_min")
-    private Integer stockMin;
-
     @TableField("status")
     private Integer status;
 

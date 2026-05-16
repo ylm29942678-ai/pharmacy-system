@@ -53,3 +53,18 @@ export const createPurchaseOrder = (data) => {
     data
   })
 }
+
+export const inboundPurchaseOrder = (id) => {
+  return request({
+    url: `/purchase-order/${id}/inbound`,
+    method: 'post'
+  })
+}
+
+export const exportPurchaseOrder = () => {
+  return request({
+    url: '/purchase-order/export',
+    method: 'get',
+    responseType: 'blob'
+  })
+}

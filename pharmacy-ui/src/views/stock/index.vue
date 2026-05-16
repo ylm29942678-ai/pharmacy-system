@@ -7,6 +7,10 @@
         </div>
       </template>
 
+      <div class="table-toolbar">
+        <el-button type="success" @click="handleExport">导出Excel</el-button>
+      </div>
+
       <el-table
         v-loading="loading"
         :data="tableData"
@@ -30,7 +34,11 @@
             <span :style="{ color: row.isLowStock ? '#f56c6c' : '' }">{{ row.stockNum }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="stockMin" label="预警下限" width="100" />
+        <el-table-column prop="stockMin" label="预警下限" width="140">
+          <template #default="{ row }">
+            <el-input-number v-model="row.stockMin" :min="0" size="small" controls-position="right" style="width: 110px" />
+          </template>
+        </el-table-column>
         <el-table-column prop="expireDate" label="有效期至" width="120" />
         <el-table-column prop="cabinet" label="存放位置" width="100" />
         <el-table-column label="状态" width="180">
@@ -42,6 +50,11 @@
           </template>
         </el-table-column>
         <el-table-column prop="createTime" label="入库时间" width="180" />
+        <el-table-column label="操作" width="100" fixed="right">
+          <template #default="{ row }">
+            <el-button type="primary" size="small" @click="handleSaveStockMin(row)">保存</el-button>
+          </template>
+        </el-table-column>
       </el-table>
 
       <el-pagination
@@ -61,7 +74,8 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { getStockListWithMedicine } from '@/api/stock'
+import { getStockListWithMedicine, exportStock, updateStock } from '@/api/stock'
+import { downloadBlob } from '@/utils/download'
 
 const loading = ref(false)
 const tableData = ref([])
@@ -97,6 +111,42 @@ const fetchData = async () => {
   }
 }
 
+const handleExport = async () => {
+  try {
+    const blob = await exportStock()
+    downloadBlob(blob, '库存数据.xlsx')
+  } catch (error) {
+    ElMessage.error('导出失败')
+  }
+}
+
+const handleSaveStockMin = async (row) => {
+  try {
+    const res = await updateStock({
+      stockId: row.stockId,
+      medId: row.medId,
+      batchNo: row.batchNo,
+      expireDate: row.expireDate,
+      stockNum: row.stockNum,
+      stockMin: row.stockMin || 0,
+      purchasePrice: row.purchasePrice,
+      cabinet: row.cabinet,
+      productionDate: row.productionDate,
+      supplierId: row.supplierId,
+      status: row.status,
+      remark: row.remark
+    })
+    if (res.code === 200) {
+      ElMessage.success('预警下限已保存')
+      fetchData()
+    } else {
+      ElMessage.error(res.message || '保存失败')
+    }
+  } catch (error) {
+    ElMessage.error(error?.response?.data?.message || '保存失败')
+  }
+}
+
 onMounted(() => {
   fetchData()
 })
@@ -109,5 +159,9 @@ onMounted(() => {
 
 :deep(.warning-row) {
   background-color: #fef0f0 !important;
+}
+
+.table-toolbar {
+  margin-bottom: 20px;
 }
 </style>

@@ -45,3 +45,11 @@ export function deleteStock(id) {
     method: 'delete'
   })
 }
+
+export function exportStock() {
+  return request({
+    url: '/stock/export',
+    method: 'get',
+    responseType: 'blob'
+  })
+}

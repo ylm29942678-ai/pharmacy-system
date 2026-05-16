@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 
 @Service
 public class StockServiceImpl extends ServiceImpl<StockMapper, Stock> implements StockService {
@@ -20,22 +21,34 @@ public class StockServiceImpl extends ServiceImpl<StockMapper, Stock> implements
         LocalDate today = LocalDate.now();
 
         for (StockVO vo : stockPage.getRecords()) {
-            if (vo.getExpireDate() != null) {
-                long daysUntilExpire = ChronoUnit.DAYS.between(today, vo.getExpireDate());
-                vo.setIsExpired(daysUntilExpire < 0);
-                vo.setIsNearExpire(daysUntilExpire >= 0 && daysUntilExpire <= 30);
-            } else {
-                vo.setIsExpired(false);
-                vo.setIsNearExpire(false);
-            }
-
-            if (vo.getStockMin() != null && vo.getStockNum() != null) {
-                vo.setIsLowStock(vo.getStockNum() <= vo.getStockMin());
-            } else {
-                vo.setIsLowStock(false);
-            }
+            fillStockFlags(vo, today);
         }
 
         return stockPage;
+    }
+
+    @Override
+    public List<StockVO> listStockWithMedicine() {
+        List<StockVO> list = baseMapper.selectStockListWithMedicine();
+        LocalDate today = LocalDate.now();
+        list.forEach(vo -> fillStockFlags(vo, today));
+        return list;
+    }
+
+    private void fillStockFlags(StockVO vo, LocalDate today) {
+        if (vo.getExpireDate() != null) {
+            long daysUntilExpire = ChronoUnit.DAYS.between(today, vo.getExpireDate());
+            vo.setIsExpired(daysUntilExpire < 0);
+            vo.setIsNearExpire(daysUntilExpire >= 0 && daysUntilExpire <= 30);
+        } else {
+            vo.setIsExpired(false);
+            vo.setIsNearExpire(false);
+        }
+
+        if (vo.getStockMin() != null && vo.getStockNum() != null) {
+            vo.setIsLowStock(vo.getStockNum() <= vo.getStockMin());
+        } else {
+            vo.setIsLowStock(false);
+        }
     }
 }

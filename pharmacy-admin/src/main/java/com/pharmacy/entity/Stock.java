@@ -24,6 +24,9 @@ public class Stock {
     @TableField("stock_num")
     private Integer stockNum;
 
+    @TableField("stock_min")
+    private Integer stockMin;
+
     @TableField("purchase_price")
     private BigDecimal purchasePrice;
 
@@ -35,6 +38,12 @@ public class Stock {
 
     @TableField("supplier_id")
     private Integer supplierId;
+
+    @TableField("purchase_id")
+    private Long purchaseId;
+
+    @TableField("purchase_item_id")
+    private Long purchaseItemId;
 
     @TableField("status")
     private Integer status;

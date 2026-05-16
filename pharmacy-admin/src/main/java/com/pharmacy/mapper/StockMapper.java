@@ -15,13 +15,19 @@ import java.util.List;
 @Mapper
 public interface StockMapper extends BaseMapper<Stock> {
     
-    @Select("SELECT s.*, m.med_name, COALESCE(sp.short_name, sp.supplier_name) AS supplier_name, m.spec, m.unit, m.stock_min " +
+    @Select("SELECT s.*, m.med_name, COALESCE(sp.short_name, sp.supplier_name) AS supplier_name, m.spec, m.unit " +
             "FROM stock s LEFT JOIN medicine m ON s.med_id = m.med_id " +
             "LEFT JOIN supplier sp ON s.supplier_id = sp.supplier_id " +
             "ORDER BY s.create_time DESC")
     IPage<StockVO> selectStockPageWithMedicine(Page<StockVO> page);
 
-    @Select("SELECT s.*, m.med_name, COALESCE(sp.short_name, sp.supplier_name) AS supplier_name, m.spec, m.unit, m.stock_min " +
+    @Select("SELECT s.*, m.med_name, COALESCE(sp.short_name, sp.supplier_name) AS supplier_name, m.spec, m.unit " +
+            "FROM stock s LEFT JOIN medicine m ON s.med_id = m.med_id " +
+            "LEFT JOIN supplier sp ON s.supplier_id = sp.supplier_id " +
+            "ORDER BY s.create_time DESC")
+    List<StockVO> selectStockListWithMedicine();
+
+    @Select("SELECT s.*, m.med_name, COALESCE(sp.short_name, sp.supplier_name) AS supplier_name, m.spec, m.unit " +
             "FROM stock s LEFT JOIN medicine m ON s.med_id = m.med_id " +
             "LEFT JOIN supplier sp ON s.supplier_id = sp.supplier_id " +
             "WHERE s.expire_date < #{today} AND s.status = 1 " +

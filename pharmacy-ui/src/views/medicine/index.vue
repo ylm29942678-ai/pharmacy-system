@@ -32,6 +32,16 @@
 
       <div class="table-toolbar">
         <el-button type="primary" @click="handleAdd">新增</el-button>
+        <el-button type="success" @click="handleExport">导出Excel</el-button>
+        <el-button @click="handleDownloadTemplate">下载模板</el-button>
+        <el-button @click="triggerImport">导入Excel</el-button>
+        <input
+          ref="importInputRef"
+          type="file"
+          accept=".xlsx,.xls"
+          style="display: none"
+          @change="handleImportChange"
+        />
         <el-button type="danger" :disabled="multipleSelection.length === 0" @click="handleBatchDelete">批量删除</el-button>
       </div>
 
@@ -165,11 +175,6 @@
               </el-radio-group>
             </el-form-item>
           </el-col>
-          <el-col :span="12">
-            <el-form-item label="最低库存" prop="stockMin">
-              <el-input-number v-model="formData.stockMin" :min="0" style="width: 100%" placeholder="最低库存" />
-            </el-form-item>
-          </el-col>
         </el-row>
         <el-row :gutter="20">
           <el-col :span="12">
@@ -196,7 +201,8 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getMedicineList, addMedicine, updateMedicine, deleteMedicine } from '@/api/medicine'
+import { getMedicineList, addMedicine, updateMedicine, deleteMedicine, exportMedicine, downloadMedicineTemplate, importMedicine } from '@/api/medicine'
+import { downloadBlob } from '@/utils/download'
 
 const loading = ref(false)
 const tableData = ref([])
@@ -204,6 +210,7 @@ const multipleSelection = ref([])
 const dialogVisible = ref(false)
 const dialogTitle = ref('新增药品')
 const formRef = ref(null)
+const importInputRef = ref(null)
 
 const queryForm = reactive({
   medName: '',
@@ -230,7 +237,6 @@ const formData = reactive({
   retailPrice: 0,
   purchasePrice: 0,
   isRx: 0,
-  stockMin: 0,
   status: 1,
   remark: ''
 })
@@ -301,7 +307,6 @@ const handleAdd = () => {
     retailPrice: 0,
     purchasePrice: 0,
     isRx: 0,
-    stockMin: 0,
     status: 1,
     remark: ''
   })
@@ -348,6 +353,61 @@ const handleDelete = (row) => {
       ElMessage.error('删除失败')
     }
   }).catch(() => {})
+}
+
+const handleExport = async () => {
+  try {
+    const params = {}
+    if (queryForm.medName) params.medName = queryForm.medName
+    if (queryForm.medType) params.medType = queryForm.medType
+    if (queryForm.status !== null && queryForm.status !== undefined) params.status = queryForm.status
+    const blob = await exportMedicine(params)
+    downloadBlob(blob, '药品数据.xlsx')
+  } catch (error) {
+    ElMessage.error('导出失败')
+  }
+}
+
+const handleDownloadTemplate = async () => {
+  try {
+    const blob = await downloadMedicineTemplate()
+    downloadBlob(blob, '药品导入模板.xlsx')
+  } catch (error) {
+    ElMessage.error('模板下载失败')
+  }
+}
+
+const triggerImport = () => {
+  importInputRef.value?.click()
+}
+
+const handleImportChange = async (event) => {
+  const file = event.target.files?.[0]
+  event.target.value = ''
+  if (!file) return
+  if (!/\.(xlsx|xls)$/i.test(file.name)) {
+    ElMessage.warning('请选择 .xlsx 或 .xls 文件')
+    return
+  }
+  try {
+    const res = await importMedicine(file)
+    if (res.code === 200) {
+      const data = res.data || {}
+      const errors = data.errors || []
+      if (data.failCount > 0) {
+        ElMessageBox.alert(errors.join('\n'), `导入完成：成功 ${data.successCount} 条，失败 ${data.failCount} 条`, {
+          type: 'warning'
+        })
+      } else {
+        ElMessage.success(`导入成功：${data.successCount} 条`)
+      }
+      fetchData()
+    } else {
+      ElMessage.error(res.message || '导入失败')
+    }
+  } catch (error) {
+    ElMessage.error(error?.response?.data?.message || '导入失败')
+  }
 }
 
 const handleBatchDelete = () => {
